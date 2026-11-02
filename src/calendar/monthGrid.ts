@@ -13,7 +13,8 @@ export const MONTH_NAMES = [
   'December',
 ];
 
-export const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+export const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function buildMonthGrid(year: number, month: number): (number | null)[] {
   const daysInMonth = new Date(year, month + 1, 0).getDate();

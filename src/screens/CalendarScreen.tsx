@@ -37,6 +37,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         <Text style={styles.logo}>✿ Bloomora</Text>
         <Pressable
           accessibilityRole="button"
+          hitSlop={8}
           onPress={goToToday}
           style={styles.todayButton}
         >
@@ -70,7 +71,9 @@ export default function CalendarScreen({ today = new Date() }: Props) {
       <View style={styles.grid}>
         {WEEKDAY_LABELS.map((label, index) => (
           <View key={index} style={styles.cell}>
-            <Text style={styles.weekday}>{label}</Text>
+            <Text style={[styles.weekday, label === 'Sun' && styles.sunday]}>
+              {label}
+            </Text>
           </View>
         ))}
 
@@ -78,7 +81,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
           const isToday = isCurrentMonth && day === today.getDate();
 
           return (
-            <View key={index} style={styles.cell}>
+            <View key={`${year}-${month}-${index}`} style={styles.cell}>
               {day !== null && (
                 <View style={[styles.day, isToday && styles.today]}>
                   <Text style={[styles.dayText, isToday && styles.todayText]}>
@@ -112,12 +115,13 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   todayButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: colors.primary,
   },
   todayButtonText: {
+    fontSize: 11,
     color: colors.surface,
   },
   monthRow: {
@@ -142,8 +146,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   arrowButton: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
@@ -163,6 +167,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     color: colors.textSecondary,
+  },
+  sunday: {
+    color: colors.primary,
   },
   day: {
     width: 42,
