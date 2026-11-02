@@ -1,5 +1,7 @@
 # Bloomora
 
+[![CI](https://github.com/LenionK/Bloomora/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LenionK/Bloomora/actions/workflows/ci.yml)
+
 An ad-free calendar and day planner for your phone, built with React Native and Expo.
 
 > **Status:** early development. The project is set up, but the features below are not built yet.
