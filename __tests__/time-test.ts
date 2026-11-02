@@ -1,4 +1,5 @@
 import {
+  completeTimeInput,
   formatTime,
   formatTimeInput,
   getDefaultEndText,
@@ -47,10 +48,19 @@ test('parses complete times', () => {
   expect(parseTime('23:59')).toEqual({ hours: 23, minutes: 59 });
 });
 
-test('rejects incomplete and impossible times', () => {
+test('completes partial times', () => {
+  expect(parseTime('1')).toEqual({ hours: 1, minutes: 0 });
+  expect(parseTime('16:3')).toEqual({ hours: 16, minutes: 30 });
+  expect(completeTimeInput('12:0')).toBe('12:00');
+  expect(completeTimeInput('12:3')).toBe('12:30');
+  expect(completeTimeInput('12')).toBe('12:00');
+  expect(completeTimeInput('1')).toBe('01:00');
+  expect(completeTimeInput('16:30')).toBe('16:30');
+  expect(completeTimeInput('')).toBe('');
+});
+
+test('rejects empty and impossible times', () => {
   expect(parseTime('')).toBeNull();
-  expect(parseTime('1')).toBeNull();
-  expect(parseTime('16:3')).toBeNull();
   expect(parseTime('24:00')).toBeNull();
   expect(parseTime('12:60')).toBeNull();
   expect(parseTime('68:44')).toBeNull();
@@ -61,7 +71,8 @@ test('ends 30 minutes after the start without leaving the day', () => {
   expect(getDefaultEndText('09')).toBe('09:30');
   expect(getDefaultEndText('23:45')).toBe('23:59');
   expect(getDefaultEndText('23:59')).toBe('');
-  expect(getDefaultEndText('16:3')).toBe('');
+  expect(getDefaultEndText('16:3')).toBe('17:00');
+  expect(getDefaultEndText('')).toBe('');
 });
 
 test('accepts a range only when the end is after the start', () => {

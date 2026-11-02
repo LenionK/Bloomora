@@ -8,13 +8,18 @@ const PETAL_PATH =
 type Props = {
   size: number;
   color: string;
+  detailColor?: string;
 };
 
-export default function Logo({ size, color }: Props) {
+export default function Logo({
+  size,
+  color,
+  detailColor = colors.surface,
+}: Props) {
   const petalStyle = {
     d: PETAL_PATH,
     fill: color,
-    stroke: colors.surface,
+    stroke: detailColor,
     strokeWidth: 2,
   };
 
@@ -34,7 +39,7 @@ export default function Logo({ size, color }: Props) {
       ))}
       {/* Each petal covers the previous one, so the first must also cover the last. */}
       <Path {...petalStyle} clipPath="url(#firstPetalLeftHalf)" />
-      <Circle fill={colors.surface} r={7} />
+      <Circle fill={detailColor} r={7} />
     </Svg>
   );
 }

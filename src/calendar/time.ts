@@ -39,15 +39,29 @@ export function formatTimeInput(text: string): string {
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
+// A partial time counts as complete: 9 is 09:00 and 12:3 is 12:30.
 export function parseTime(text: string): TimeOfDay | null {
   const digits = text.replace(/\D/g, '');
-  if (digits.length !== 2 && digits.length !== 4) return null;
+  if (digits.length === 0 || digits.length > 4) return null;
 
   const hours = Number(digits.slice(0, 2));
-  const minutes = Number(digits.slice(2) || '0');
+  const minutes = Number(digits.slice(2).padEnd(2, '0'));
   if (hours > 23 || minutes > 59) return null;
 
   return { hours, minutes };
+}
+
+function formatTimeOfDay(time: TimeOfDay): string {
+  const hours = String(time.hours).padStart(2, '0');
+  const minutes = String(time.minutes).padStart(2, '0');
+
+  return `${hours}:${minutes}`;
+}
+
+export function completeTimeInput(text: string): string {
+  const time = parseTime(text);
+
+  return time ? formatTimeOfDay(time) : text;
 }
 
 function toMinutes(time: TimeOfDay): number {
@@ -65,10 +79,10 @@ export function getDefaultEndText(startText: string): string {
   );
   if (endMinutes === startMinutes) return '';
 
-  const hours = String(Math.floor(endMinutes / 60)).padStart(2, '0');
-  const minutes = String(endMinutes % 60).padStart(2, '0');
-
-  return `${hours}:${minutes}`;
+  return formatTimeOfDay({
+    hours: Math.floor(endMinutes / 60),
+    minutes: endMinutes % 60,
+  });
 }
 
 export function parseTimeRange(
