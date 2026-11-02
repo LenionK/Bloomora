@@ -12,6 +12,21 @@ test('shows the current month', async () => {
   expect(screen.queryByText('31')).toBeNull();
 });
 
+test('opens the add activity popup and starts empty after cancelling', async () => {
+  await render(<CalendarScreen today={today} />);
+  expect(screen.queryByText('New activity')).toBeNull();
+
+  await fireEvent.press(screen.getByLabelText('Add activity'));
+  expect(screen.getByText('2 November')).toBeTruthy();
+  await fireEvent.changeText(screen.getByLabelText('Activity title'), 'Call');
+
+  await fireEvent.press(screen.getByText('Cancel'));
+  expect(screen.queryByText('New activity')).toBeNull();
+
+  await fireEvent.press(screen.getByLabelText('Add activity'));
+  expect(screen.getByLabelText('Activity title').props.value).toBe('');
+});
+
 test('moves between months, across the year, and back to today', async () => {
   await render(<CalendarScreen today={today} />);
 

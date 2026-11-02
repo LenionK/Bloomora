@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  buildMonthGrid,
-  MONTH_NAMES,
-  WEEKDAY_LABELS,
-} from '../calendar/monthGrid';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { formatTime } from '../calendar/time';
+import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
+import CalendarGrid from '../components/CalendarGrid';
+import CalendarHeader from '../components/CalendarHeader';
 import { colors } from '../theme';
 
 type Props = {
@@ -16,15 +15,11 @@ export default function CalendarScreen({ today = new Date() }: Props) {
   const [visibleMonth, setVisibleMonth] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
   );
-
   const [selectedDate, setSelectedDate] = useState(today);
-
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
-  const cells = buildMonthGrid(year, month);
-  const isCurrentMonth =
-    year === today.getFullYear() && month === today.getMonth();
 
   function changeMonth(offset: number) {
     setVisibleMonth(new Date(year, month + offset, 1));
@@ -35,83 +30,54 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     setSelectedDate(today);
   }
 
+  function addActivity({ title, start, end, color, repeatDays }: NewActivity) {
+    console.log(
+      start,
+      formatTime(start),
+      formatTime(end),
+      title,
+      color,
+      repeatDays,
+    );
+    setIsAddOpen(false);
+  }
+
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <Text style={styles.logo}>✿ Bloomora</Text>
+      <CalendarHeader
+        year={year}
+        month={month}
+        onPreviousMonth={() => changeMonth(-1)}
+        onNextMonth={() => changeMonth(1)}
+        onToday={goToToday}
+      />
+
+      <CalendarGrid
+        year={year}
+        month={month}
+        today={today}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+      />
+
+      <View style={styles.addRow}>
         <Pressable
+          accessibilityLabel="Add activity"
           accessibilityRole="button"
-          hitSlop={8}
-          onPress={goToToday}
-          style={styles.todayButton}
+          onPress={() => setIsAddOpen(true)}
+          style={styles.addButton}
         >
-          <Text style={styles.todayButtonText}>Today</Text>
+          <Ionicons name="add" size={24} color={colors.surface} />
         </Pressable>
       </View>
 
-      <Text style={styles.year}>{year}</Text>
-      <View style={styles.monthRow}>
-        <Text style={styles.month}>{MONTH_NAMES[month]}</Text>
-        <View style={styles.arrows}>
-          <Pressable
-            accessibilityLabel="Previous month"
-            accessibilityRole="button"
-            onPress={() => changeMonth(-1)}
-            style={styles.arrowButton}
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.surface} />
-          </Pressable>
-          <Pressable
-            accessibilityLabel="Next month"
-            accessibilityRole="button"
-            onPress={() => changeMonth(1)}
-            style={styles.arrowButton}
-          >
-            <Ionicons name="chevron-forward" size={24} color={colors.surface} />
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.grid}>
-        {WEEKDAY_LABELS.map((label, index) => (
-          <View key={index} style={styles.cell}>
-            <Text style={[styles.weekday, label === 'Sun' && styles.sunday]}>
-              {label}
-            </Text>
-          </View>
-        ))}
-
-        {cells.map((day, index) => {
-          const isToday = isCurrentMonth && day === today.getDate();
-          const isSelected =
-            selectedDate.getFullYear() === year &&
-            selectedDate.getMonth() === month &&
-            selectedDate.getDate() === day;
-
-
-          return (
-            <View key={`${year}-${month}-${index}`} style={styles.cell}>
-              {day !== null && (
-                <Pressable
-                  accessibilityRole='button'
-                  accessibilityState={{ selected: isSelected}}
-                  onPress={() => setSelectedDate(new Date(year, month, day))}
-                  style={[
-                    styles.day, 
-                    isToday && styles.today,
-                    isSelected && !isToday && styles.selected,
-                  ]}
-                >
-                  {isSelected && isToday && <View style={styles.todaySelectedRing} />}
-                  <Text style={[styles.dayText, isToday && styles.todayText]}>
-                    {day}
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          );
-        })}
-      </View>
+      {isAddOpen && (
+        <AddActivityModal
+          date={selectedDate}
+          onAdd={addActivity}
+          onClose={() => setIsAddOpen(false)}
+        />
+      )}
     </View>
   );
 }
@@ -123,105 +89,17 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     backgroundColor: colors.background,
   },
-  topBar: {
+  addRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
+    marginTop: 16,
   },
-  logo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  todayButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-  },
-  todayButtonText: {
-    fontSize: 11,
-    color: colors.surface,
-  },
-  monthRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  year: {
-    marginTop: 24,
-    color: colors.textSecondary,
-  },
-  month: {
-    fontSize: 40,
-    lineHeight: 44,
-    includeFontPadding: false,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  arrows: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  arrowButton: {
-    width: 40,
-    height: 40,
+  addButton: {
+    width: 44,
+    height: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  cell: {
-    width: '14.2857%',
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  weekday: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: colors.textSecondary,
-  },
-  sunday: {
-    color: colors.primary,
-  },
-  day: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  today: {
-    backgroundColor: colors.primary,
-  },
-  dayText: {
-    color: colors.text,
-  },
-  todayText: {
-    fontWeight: 'bold',
-    color: colors.surface,
-  },
-
-  selected: {
-  borderWidth: 2,
-  borderColor: colors.primary,
-  },
-
-  todaySelectedRing: {
-    position: 'absolute',
-    top: 4,
-    left: 4,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 2,
-    borderColor: colors.surface,
-  },
-
 });
