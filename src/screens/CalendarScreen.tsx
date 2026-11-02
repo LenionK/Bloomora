@@ -17,6 +17,9 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     new Date(today.getFullYear(), today.getMonth(), 1),
   );
 
+  const [selectedDate, setSelectedDate] = useState(today);
+
+
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
   const cells = buildMonthGrid(year, month);
@@ -29,6 +32,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
 
   function goToToday() {
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelectedDate(today);
   }
 
   return (
@@ -79,15 +83,30 @@ export default function CalendarScreen({ today = new Date() }: Props) {
 
         {cells.map((day, index) => {
           const isToday = isCurrentMonth && day === today.getDate();
+          const isSelected =
+            selectedDate.getFullYear() === year &&
+            selectedDate.getMonth() === month &&
+            selectedDate.getDate() === day;
+
 
           return (
             <View key={`${year}-${month}-${index}`} style={styles.cell}>
               {day !== null && (
-                <View style={[styles.day, isToday && styles.today]}>
+                <Pressable
+                  accessibilityRole='button'
+                  accessibilityState={{ selected: isSelected}}
+                  onPress={() => setSelectedDate(new Date(year, month, day))}
+                  style={[
+                    styles.day, 
+                    isToday && styles.today,
+                    isSelected && !isToday && styles.selected,
+                  ]}
+                >
+                  {isSelected && isToday && <View style={styles.todaySelectedRing} />}
                   <Text style={[styles.dayText, isToday && styles.todayText]}>
                     {day}
                   </Text>
-                </View>
+                </Pressable>
               )}
             </View>
           );
@@ -188,4 +207,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.surface,
   },
+
+  selected: {
+  borderWidth: 2,
+  borderColor: colors.primary,
+  },
+
+  todaySelectedRing: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 2,
+    borderColor: colors.surface,
+  },
+
 });
