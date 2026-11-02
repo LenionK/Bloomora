@@ -27,3 +27,16 @@ test('moves between months, across the year, and back to today', async () => {
   await fireEvent.press(screen.getByText('Today'));
   expect(screen.getByText('November')).toBeTruthy();
 });
+
+test('selects the pressed day and returns to today', async () => {
+  await render(<CalendarScreen today={today} />);
+  expect(screen.getByRole('button', { name: '2', selected: true })).toBeTruthy();
+
+  await fireEvent.press(screen.getByRole('button', { name: '15' }));
+  expect(screen.getByRole('button', { name: '15', selected: true })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '2', selected: true })).toBeNull();
+
+  await fireEvent.press(screen.getByText('Today'));
+  expect(screen.getByRole('button', { name: '2', selected: true })).toBeTruthy();
+});
+
