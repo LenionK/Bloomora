@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import {
+  completeTimeInput,
   formatTimeInput,
   getDefaultEndText,
   parseTimeRange,
@@ -52,6 +53,10 @@ export default function AddActivityModal({ date, onAdd, onClose }: Props) {
   function changeEnd(text: string) {
     setTypedEndText(formatTimeInput(text));
     setHasTimeError(false);
+  }
+
+  function completeEnd() {
+    if (typedEndText !== null) setTypedEndText(completeTimeInput(typedEndText));
   }
 
   function toDate(time: TimeOfDay) {
@@ -114,6 +119,7 @@ export default function AddActivityModal({ date, onAdd, onClose }: Props) {
               <TextInput
                 accessibilityLabel="Start time"
                 keyboardType="number-pad"
+                onBlur={() => setStartText(completeTimeInput(startText))}
                 onChangeText={changeStart}
                 placeholder="HH:MM"
                 placeholderTextColor={colors.textSecondary}
@@ -128,6 +134,7 @@ export default function AddActivityModal({ date, onAdd, onClose }: Props) {
               <TextInput
                 accessibilityLabel="End time"
                 keyboardType="number-pad"
+                onBlur={completeEnd}
                 onChangeText={changeEnd}
                 placeholder="HH:MM"
                 placeholderTextColor={colors.textSecondary}

@@ -106,6 +106,47 @@ test('moves the calculated end when the start changes', async () => {
   expect(valueOf('End time')).toBe('17:30');
 });
 
+test('completes a partial time when leaving the field', async () => {
+  await renderModal();
+
+  await type('Start time', '120');
+  await fireEvent(screen.getByLabelText('Start time'), 'blur');
+  expect(valueOf('Start time')).toBe('12:00');
+  expect(valueOf('End time')).toBe('12:30');
+
+  await type('End time', '133');
+  await fireEvent(screen.getByLabelText('End time'), 'blur');
+  expect(valueOf('End time')).toBe('13:30');
+});
+
+test('keeps calculating the end after leaving it untouched', async () => {
+  await renderModal();
+
+  await fireEvent(screen.getByLabelText('End time'), 'blur');
+  await type('Start time', '1630');
+  expect(valueOf('End time')).toBe('17:00');
+
+  await fireEvent(screen.getByLabelText('End time'), 'blur');
+  await type('Start time', '1700');
+  expect(valueOf('End time')).toBe('17:30');
+});
+
+test('uses a partial time when adding without leaving the field', async () => {
+  const onAdd = jest.fn();
+  await renderModal(onAdd);
+
+  await type('Activity title', 'Call');
+  await type('Start time', '120');
+  await fireEvent.press(screen.getByText('Add'));
+
+  expect(onAdd).toHaveBeenCalledWith(
+    expect.objectContaining({
+      start: new Date(2026, 10, 15, 12, 0),
+      end: new Date(2026, 10, 15, 12, 30),
+    }),
+  );
+});
+
 test('does not accept an impossible time', async () => {
   await renderModal();
 

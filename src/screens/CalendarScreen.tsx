@@ -1,11 +1,17 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { formatTime } from '../calendar/time';
-import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
+import { useCallback, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import {
+  Activity,
+  getNextOccurrence,
+  toggleCompletedOn,
+} from '../calendar/activities';
+import { useMonthSwipe } from '../calendar/useMonthSwipe';
+import { NewActivity } from '../components/AddActivityModal';
 import CalendarGrid from '../components/CalendarGrid';
 import CalendarHeader from '../components/CalendarHeader';
+import NextActivityCard from '../components/NextActivityCard';
 import { colors } from '../theme';
+import DayScreen from './DayScreen';
 
 type Props = {
   today?: Date;
@@ -16,68 +22,97 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     new Date(today.getFullYear(), today.getMonth(), 1),
   );
   const [selectedDate, setSelectedDate] = useState(today);
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isDayOpen, setIsDayOpen] = useState(false);
+  const [activities, setActivities] = useState<Activity[]>([]);
 
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
 
-  function changeMonth(offset: number) {
-    setVisibleMonth(new Date(year, month + offset, 1));
-  }
+  const changeMonth = useCallback((offset: number) => {
+    setVisibleMonth(
+      (current) =>
+        new Date(current.getFullYear(), current.getMonth() + offset, 1),
+    );
+  }, []);
+  const monthSwipeHandlers = useMonthSwipe(changeMonth);
 
   function goToToday() {
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     setSelectedDate(today);
   }
 
-  function addActivity({ title, start, end, color, repeatDays }: NewActivity) {
-    console.log(
-      start,
-      formatTime(start),
-      formatTime(end),
-      title,
-      color,
-      repeatDays,
+  function openDay(date: Date) {
+    setSelectedDate(date);
+    setIsDayOpen(true);
+  }
+
+  function closeDay() {
+    setVisibleMonth(
+      new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
     );
-    setIsAddOpen(false);
+    setIsDayOpen(false);
+  }
+
+  function addActivity(activity: NewActivity) {
+    setActivities([
+      ...activities,
+      { ...activity, id: String(Date.now()), completedDates: [] },
+    ]);
+  }
+
+  function toggleCompleted(activity: Activity) {
+    setActivities(
+      activities.map((item) =>
+        item.id === activity.id ? toggleCompletedOn(item, selectedDate) : item,
+      ),
+    );
+  }
+
+  function deleteActivity(activity: Activity) {
+    setActivities(activities.filter((item) => item.id !== activity.id));
+  }
+
+  if (isDayOpen) {
+    return (
+      <DayScreen
+        activities={activities}
+        date={selectedDate}
+        onAdd={addActivity}
+        onBack={closeDay}
+        onChangeDate={setSelectedDate}
+        onDelete={deleteActivity}
+        onToggleCompleted={toggleCompleted}
+        today={today}
+      />
+    );
   }
 
   return (
     <View style={styles.container}>
-      <CalendarHeader
-        year={year}
-        month={month}
-        onPreviousMonth={() => changeMonth(-1)}
-        onNextMonth={() => changeMonth(1)}
-        onToday={goToToday}
-      />
+      <View {...monthSwipeHandlers}>
+        <CalendarHeader
+          year={year}
+          month={month}
+          onPreviousMonth={() => changeMonth(-1)}
+          onNextMonth={() => changeMonth(1)}
+          onToday={goToToday}
+        />
 
-      <CalendarGrid
-        year={year}
-        month={month}
-        today={today}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-      />
-
-      <View style={styles.addRow}>
-        <Pressable
-          accessibilityLabel="Add activity"
-          accessibilityRole="button"
-          onPress={() => setIsAddOpen(true)}
-          style={styles.addButton}
-        >
-          <Ionicons name="add" size={24} color={colors.surface} />
-        </Pressable>
+        <CalendarGrid
+          year={year}
+          month={month}
+          today={today}
+          selectedDate={selectedDate}
+          onSelectDate={openDay}
+        />
       </View>
 
-      {isAddOpen && (
-        <AddActivityModal
-          date={selectedDate}
-          onAdd={addActivity}
-          onClose={() => setIsAddOpen(false)}
+      <View style={styles.nextActivity}>
+        <NextActivityCard
+          occurrence={getNextOccurrence(activities, today)}
+          onPress={(date) => openDay(date)}
         />
-      )}
+      </View>
     </View>
   );
 }
@@ -89,17 +124,8 @@ const styles = StyleSheet.create({
     paddingTop: 56,
     backgroundColor: colors.background,
   },
-  addRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 16,
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
+  nextActivity: {
+    marginTop: 'auto',
+    marginBottom: 32,
   },
 });
