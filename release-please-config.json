@@ -1,0 +1,9 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "expo",
+      "include-component-in-tag": false,
+      "bump-minor-pre-major": true
+    }
+  }
+}
