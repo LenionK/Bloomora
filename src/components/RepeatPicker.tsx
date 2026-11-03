@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { colors } from '../theme';
@@ -8,7 +9,7 @@ type Props = {
   onChange: (days: number[]) => void;
 };
 
-export default function RepeatPicker({ value, color, onChange }: Props) {
+export default memo(function RepeatPicker({ value, color, onChange }: Props) {
   function toggleDay(day: number) {
     const days = value.includes(day)
       ? value.filter((selectedDay) => selectedDay !== day)
@@ -41,7 +42,7 @@ export default function RepeatPicker({ value, color, onChange }: Props) {
       })}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: {

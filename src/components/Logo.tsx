@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Svg, { Circle, ClipPath, Defs, Path, Rect } from 'react-native-svg';
 import { colors } from '../theme';
 
@@ -11,7 +12,7 @@ type Props = {
   detailColor?: string;
 };
 
-export default function Logo({
+export default memo(function Logo({
   size,
   color,
   detailColor = colors.surface,
@@ -42,4 +43,4 @@ export default function Logo({
       <Circle fill={detailColor} r={7} />
     </Svg>
   );
-}
+});

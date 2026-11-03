@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { activityColors } from '../theme';
 
@@ -6,7 +7,7 @@ type Props = {
   onChange: (color: string) => void;
 };
 
-export default function ColorPicker({ value, onChange }: Props) {
+export default memo(function ColorPicker({ value, onChange }: Props) {
   return (
     <View accessibilityRole="radiogroup" style={styles.row}>
       {activityColors.map((color) => {
@@ -29,7 +30,7 @@ export default function ColorPicker({ value, onChange }: Props) {
       })}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: {

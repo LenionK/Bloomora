@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { toDateKey } from '../calendar/activities';
 import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
@@ -15,7 +15,12 @@ type Props = {
   onChange: (date: Date) => void;
 };
 
-export default function DayStrip({ firstDate, value, color, onChange }: Props) {
+export default memo(function DayStrip({
+  firstDate,
+  value,
+  color,
+  onChange,
+}: Props) {
   const selectedKey = toDateKey(value);
   const dates = Array.from(
     { length: DAYS_SHOWN },
@@ -66,7 +71,7 @@ export default function DayStrip({ firstDate, value, color, onChange }: Props) {
       })}
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   strip: {
