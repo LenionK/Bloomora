@@ -181,6 +181,84 @@ test('completes an activity only on the selected day', async () => {
   expect(screen.getByText('0/1')).toBeTruthy();
 });
 
+test('opens the popup filled with the activity to edit', async () => {
+  // Every saved value is shown, and Cancel leaves the activity as it was.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+  await addActivity('Call', '1630');
+
+  await fireEvent.press(screen.getByLabelText('Edit Call'));
+
+  expect(screen.getByText('Edit activity')).toBeTruthy();
+  expect(screen.getByLabelText('Activity title').props.value).toBe('Call');
+  expect(screen.getByLabelText('Start time').props.value).toBe('16:30');
+  expect(screen.getByLabelText('End time').props.value).toBe('17:00');
+
+  await fireEvent.changeText(screen.getByLabelText('Activity title'), 'Other');
+  await fireEvent.press(screen.getByText('Cancel'));
+
+  expect(screen.getByText('Call')).toBeTruthy();
+  expect(screen.queryByText('Other')).toBeNull();
+});
+
+test('saves the changes to an activity', async () => {
+  // The title and times change, and the activity keeps its completed state.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+  await addActivity('Call', '1630');
+  await fireEvent.press(screen.getByRole('checkbox', { name: 'Call done' }));
+
+  await fireEvent.press(screen.getByLabelText('Edit Call'));
+  await fireEvent.changeText(screen.getByLabelText('Activity title'), 'Long call');
+  await fireEvent.changeText(screen.getByLabelText('End time'), '1800');
+  await fireEvent.press(screen.getByText('Save'));
+
+  expect(screen.queryByText('Edit activity')).toBeNull();
+  expect(screen.queryByText('Call')).toBeNull();
+  expect(screen.getByText('Long call')).toBeTruthy();
+  expect(screen.getByText('18:00')).toBeTruthy();
+  expect(
+    screen.getByRole('checkbox', { name: 'Long call done', checked: true }),
+  ).toBeTruthy();
+});
+
+test('moves a one-time activity to another day', async () => {
+  // The activity leaves the open day and appears on the chosen one.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+  await addActivity('Call', '1630');
+
+  await fireEvent.press(screen.getByLabelText('Edit Call'));
+  await fireEvent.press(screen.getByRole('radio', { name: 'Mon 9 November' }));
+  await fireEvent.press(screen.getByText('Save'));
+
+  expect(screen.queryByText('Call')).toBeNull();
+
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  expect(screen.getByText('Next · Mon 9 November')).toBeTruthy();
+});
+
+test('edits all the repetitions of an activity from any of its days', async () => {
+  // A series is one activity: it starts from its first day whichever day is open.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+  await addActivity('Gym', '1630', 'Mon');
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  await openDay('9');
+
+  await fireEvent.press(screen.getByLabelText('Edit Gym'));
+  expect(screen.getByText('From 2 November')).toBeTruthy();
+  expect(screen.queryByRole('radio', { name: 'Mon 9 November' })).toBeNull();
+
+  await fireEvent.changeText(screen.getByLabelText('Activity title'), 'Run');
+  await fireEvent.press(screen.getByText('Save'));
+  expect(screen.getByText('Run')).toBeTruthy();
+
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  await openDay('16');
+  expect(screen.getByText('Run')).toBeTruthy();
+});
+
 test('asks before deleting a one-time activity', async () => {
   // Nothing is removed until the popup is confirmed, and Cancel keeps the activity.
   await render(<CalendarScreen today={today} />);

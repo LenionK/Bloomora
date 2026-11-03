@@ -10,6 +10,7 @@ import {
 import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import {
   completeTimeInput,
+  formatTime,
   formatTimeInput,
   getDefaultEndText,
   parseTimeRange,
@@ -31,6 +32,7 @@ export type NewActivity = {
 
 type Props = {
   date: Date;
+  activityToEdit?: NewActivity;
   firstSelectableDate?: Date;
   onAdd: (activity: NewActivity) => void;
   onClose: () => void;
@@ -38,16 +40,23 @@ type Props = {
 
 export default function AddActivityModal({
   date: initialDate,
+  activityToEdit,
   firstSelectableDate,
   onAdd,
   onClose,
 }: Props) {
   const [date, setDate] = useState(initialDate);
-  const [title, setTitle] = useState('');
-  const [startText, setStartText] = useState('');
-  const [typedEndText, setTypedEndText] = useState<string | null>(null);
-  const [color, setColor] = useState(colors.primary);
-  const [repeatDays, setRepeatDays] = useState<number[]>([]);
+  const [title, setTitle] = useState(activityToEdit?.title ?? '');
+  const [startText, setStartText] = useState(
+    activityToEdit ? formatTime(activityToEdit.start) : '',
+  );
+  const [typedEndText, setTypedEndText] = useState<string | null>(
+    activityToEdit ? formatTime(activityToEdit.end) : null,
+  );
+  const [color, setColor] = useState(activityToEdit?.color ?? colors.primary);
+  const [repeatDays, setRepeatDays] = useState<number[]>(
+    activityToEdit?.repeatDays ?? [],
+  );
   const [hasTimeError, setHasTimeError] = useState(false);
   const startInputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
@@ -102,8 +111,11 @@ export default function AddActivityModal({
         <View style={styles.card}>
           <View style={styles.header}>
             <View>
-              <Text style={[styles.title, { color }]}>New activity</Text>
+              <Text style={[styles.title, { color }]}>
+                {activityToEdit ? 'Edit activity' : 'New activity'}
+              </Text>
               <Text style={styles.date}>
+                {activityToEdit && repeatDays.length > 0 && 'From '}
                 {date.getDate()} {MONTH_NAMES[date.getMonth()]}
               </Text>
             </View>
@@ -119,7 +131,7 @@ export default function AddActivityModal({
           )}
           <TextInput
             accessibilityLabel="Activity title"
-            autoFocus
+            autoFocus={!activityToEdit}
             onChangeText={setTitle}
             onSubmitEditing={() => startInputRef.current?.focus()}
             placeholder="Activity title"
@@ -191,7 +203,9 @@ export default function AddActivityModal({
               onPress={submit}
               style={[styles.button, styles.confirmButton]}
             >
-              <Text style={styles.confirmText}>Add</Text>
+              <Text style={styles.confirmText}>
+                {activityToEdit ? 'Save' : 'Add'}
+              </Text>
             </Pressable>
           </View>
         </View>

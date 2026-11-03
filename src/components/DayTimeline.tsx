@@ -19,6 +19,7 @@ type Props = {
   activities: Activity[];
   initialHour: number;
   onToggleCompleted: (activity: Activity) => void;
+  onEdit: (activity: Activity) => void;
   onDelete: (activity: Activity) => void;
 };
 
@@ -27,6 +28,7 @@ export default function DayTimeline({
   activities,
   initialHour,
   onToggleCompleted,
+  onEdit,
   onDelete,
 }: Props) {
   const positioned = layoutDay(activities);
@@ -88,6 +90,7 @@ export default function DayTimeline({
               isCompact={laneCount > 1}
               isCompleted={isCompletedOn(activity, date)}
               onDelete={() => onDelete(activity)}
+              onEdit={() => onEdit(activity)}
               onToggleCompleted={() => onToggleCompleted(activity)}
             />
           </View>
