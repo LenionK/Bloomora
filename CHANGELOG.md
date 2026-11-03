@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.0](https://github.com/LenionK/Bloomora/compare/v0.3.0...v0.4.0) (2026-11-03)
+
+
+### Features
+
+* add app icon and launch screen ([#15](https://github.com/LenionK/Bloomora/issues/15)) ([e3abc8f](https://github.com/LenionK/Bloomora/commit/e3abc8f59309859351e87e9ac3fd994e46d41bce))
+* add typed dates, day swipe and free time links ([#20](https://github.com/LenionK/Bloomora/issues/20)) ([c02ce5b](https://github.com/LenionK/Bloomora/commit/c02ce5bb24d028a15b3aa9ed9e1fba502b250ab7))
+* **US-4:** save activities and add settings, delete options and shortcuts ([#13](https://github.com/LenionK/Bloomora/issues/13)) ([900f62e](https://github.com/LenionK/Bloomora/commit/900f62efb04ef1e83d939f3abae6a4c4b9afd2a2))
+* **US-6:** edit an activity ([#17](https://github.com/LenionK/Bloomora/issues/17)) ([b4c947b](https://github.com/LenionK/Bloomora/commit/b4c947b3c355b9775d85b1b0325ece07401c8f76))
+
+
+### Bug Fixes
+
+* refine calendar dot, progress ring, day timeline and add but ([#16](https://github.com/LenionK/Bloomora/issues/16)) ([1423666](https://github.com/LenionK/Bloomora/commit/1423666976b1b39bbc9d3f29bc19a6f124116b40))
+* remove logo seam and keep the splash clean in dark theme ([#19](https://github.com/LenionK/Bloomora/issues/19)) ([8171c38](https://github.com/LenionK/Bloomora/commit/8171c38f68d8ab211eeddc4967e3e972770b8734))
+
+
+### Performance Improvements
+
+* avoid redrawing unchanged calendar and popup parts ([#18](https://github.com/LenionK/Bloomora/issues/18)) ([48a2041](https://github.com/LenionK/Bloomora/commit/48a204140acc5fd7bc3092f33f77901acd5f7d3e))
+
 ## [0.3.0](https://github.com/LenionK/Bloomora/compare/v0.2.0...v0.3.0) (2026-11-02)
 
 
