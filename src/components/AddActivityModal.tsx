@@ -17,6 +17,7 @@ import {
 } from '../calendar/time';
 import { colors } from '../theme';
 import ColorPicker from './ColorPicker';
+import DayStrip from './DayStrip';
 import Logo from './Logo';
 import RepeatPicker from './RepeatPicker';
 
@@ -30,11 +31,18 @@ export type NewActivity = {
 
 type Props = {
   date: Date;
+  firstSelectableDate?: Date;
   onAdd: (activity: NewActivity) => void;
   onClose: () => void;
 };
 
-export default function AddActivityModal({ date, onAdd, onClose }: Props) {
+export default function AddActivityModal({
+  date: initialDate,
+  firstSelectableDate,
+  onAdd,
+  onClose,
+}: Props) {
+  const [date, setDate] = useState(initialDate);
   const [title, setTitle] = useState('');
   const [startText, setStartText] = useState('');
   const [typedEndText, setTypedEndText] = useState<string | null>(null);
@@ -101,6 +109,14 @@ export default function AddActivityModal({ date, onAdd, onClose }: Props) {
             </View>
             <Logo color={color} size={44} />
           </View>
+          {firstSelectableDate && (
+            <DayStrip
+              color={color}
+              firstDate={firstSelectableDate}
+              onChange={setDate}
+              value={date}
+            />
+          )}
           <TextInput
             accessibilityLabel="Activity title"
             autoFocus

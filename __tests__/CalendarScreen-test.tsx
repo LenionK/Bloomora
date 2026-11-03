@@ -1,8 +1,14 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import CalendarScreen from '../src/screens/CalendarScreen';
+import { colors } from '../src/theme';
 
 const today = new Date(2026, 10, 2);
+
+function dotColor(day: string) {
+  return StyleSheet.flatten(screen.getByTestId(`activity-dot-${day}`).props.style)
+    .backgroundColor;
+}
 
 async function openDay(day: string) {
   await fireEvent.press(screen.getByRole('button', { name: day }));
@@ -19,6 +25,7 @@ async function addActivity(title: string, start: string, repeatDay?: string) {
 }
 
 test('shows the current month', async () => {
+  // The calendar opens on the month of today, with no activity to show yet.
   await render(<CalendarScreen today={today} />);
 
   expect(screen.getByText('November')).toBeTruthy();
@@ -29,6 +36,7 @@ test('shows the current month', async () => {
 });
 
 test('moves between months, across the year, and back to today', async () => {
+  // The arrows cross the year correctly and My day leads back to the current month.
   await render(<CalendarScreen today={today} />);
 
   await fireEvent.press(screen.getByLabelText('Next month'));
@@ -40,11 +48,13 @@ test('moves between months, across the year, and back to today', async () => {
   expect(screen.getByText('December')).toBeTruthy();
   expect(screen.getByText('2026')).toBeTruthy();
 
-  await fireEvent.press(screen.getByText('Today'));
+  await fireEvent.press(screen.getByLabelText('My day'));
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
   expect(screen.getByText('November')).toBeTruthy();
 });
 
 test('opens the pressed day and keeps it selected when going back', async () => {
+  // Pressing a day opens its screen, and that day is still selected on the way back.
   await render(<CalendarScreen today={today} />);
   expect(screen.getByRole('button', { name: '2', selected: true })).toBeTruthy();
 
@@ -56,11 +66,13 @@ test('opens the pressed day and keeps it selected when going back', async () => 
   expect(screen.getByRole('button', { name: '15', selected: true })).toBeTruthy();
   expect(screen.queryByRole('button', { name: '2', selected: true })).toBeNull();
 
-  await fireEvent.press(screen.getByText('Today'));
+  await fireEvent.press(screen.getByLabelText('My day'));
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
   expect(screen.getByRole('button', { name: '2', selected: true })).toBeTruthy();
 });
 
 test('marks today in the day screen', async () => {
+  // The day screen says when the open day is today.
   await render(<CalendarScreen today={today} />);
 
   await openDay('2');
@@ -70,6 +82,7 @@ test('marks today in the day screen', async () => {
 });
 
 test('changes day across months and returns to that month', async () => {
+  // Day arrows can change month, and going back shows the month of the open day.
   await render(<CalendarScreen today={today} />);
 
   await openDay('30');
@@ -86,6 +99,7 @@ test('changes day across months and returns to that month', async () => {
 });
 
 test('opens the add activity popup and starts empty after cancelling', async () => {
+  // The + opens the popup for the open day, and a cancelled text is not kept.
   await render(<CalendarScreen today={today} />);
   await openDay('2');
   expect(screen.queryByText('New activity')).toBeNull();
@@ -102,6 +116,7 @@ test('opens the add activity popup and starts empty after cancelling', async () 
 });
 
 test('shows the activities of the day by start time', async () => {
+  // Activities are ordered by time whatever the order they were added in, and stay on their day.
   await render(<CalendarScreen today={today} />);
   await openDay('2');
 
@@ -109,7 +124,9 @@ test('shows the activities of the day by start time', async () => {
   await addActivity('Morning run', '0900');
 
   expect(screen.queryByText('New activity')).toBeNull();
-  expect(screen.getByText('18:00–18:30')).toBeTruthy();
+  expect(screen.getByText('18:00')).toBeTruthy();
+  expect(screen.getByText('18:30')).toBeTruthy();
+  expect(screen.queryByText('18:00–18:30')).toBeNull();
   expect(
     screen
       .getAllByText(/Morning run|Evening call/)
@@ -121,6 +138,7 @@ test('shows the activities of the day by start time', async () => {
 });
 
 test('shows the next activity on the calendar and opens its day', async () => {
+  // The calendar shows only the closest activity, and pressing it opens its day.
   await render(<CalendarScreen today={today} />);
   await openDay('20');
   await addActivity('Later', '1000');
@@ -139,6 +157,7 @@ test('shows the next activity on the calendar and opens its day', async () => {
 });
 
 test('completes an activity only on the selected day', async () => {
+  // A completed repetition updates the progress of its day and leaves the next week to do.
   await render(<CalendarScreen today={today} />);
   await openDay('2');
   await addActivity('Gym', '1630', 'Mon');
@@ -162,29 +181,186 @@ test('completes an activity only on the selected day', async () => {
   expect(screen.getByText('0/1')).toBeTruthy();
 });
 
-test('deletes a one-time activity immediately', async () => {
+test('asks before deleting a one-time activity', async () => {
+  // Nothing is removed until the popup is confirmed, and Cancel keeps the activity.
   await render(<CalendarScreen today={today} />);
   await openDay('2');
   await addActivity('Call', '1630');
 
   await fireEvent.press(screen.getByLabelText('Delete Call'));
+  expect(screen.getByText('Delete “Call”?')).toBeTruthy();
+  expect(screen.queryByRole('radio', { name: 'Only this day' })).toBeNull();
 
+  await fireEvent.press(screen.getByText('Cancel'));
+  expect(screen.getByText('Call')).toBeTruthy();
+
+  await fireEvent.press(screen.getByLabelText('Delete Call'));
+  await fireEvent.press(screen.getByText('Delete'));
   expect(screen.queryByText('Call')).toBeNull();
   expect(screen.queryByLabelText('0 of 1 completed')).toBeNull();
 });
 
-test('asks before deleting a repeating activity', async () => {
-  const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+test('deletes a repeating activity only on this day', async () => {
+  // This is the default choice, and the following weeks keep the activity.
   await render(<CalendarScreen today={today} />);
   await openDay('2');
   await addActivity('Gym', '1630', 'Mon');
 
   await fireEvent.press(screen.getByLabelText('Delete Gym'));
-  expect(screen.getByText('Gym')).toBeTruthy();
-
-  const buttons = alert.mock.calls[0][2]!;
-  await act(async () => buttons[1].onPress?.());
+  expect(
+    screen.getByRole('radio', { name: 'Only this day', checked: true }),
+  ).toBeTruthy();
+  await fireEvent.press(screen.getByText('Delete'));
   expect(screen.queryByText('Gym')).toBeNull();
 
-  alert.mockRestore();
+  await fireEvent.press(screen.getByLabelText('Next day'));
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  expect(screen.getByText('Next · Mon 9 November')).toBeTruthy();
+});
+
+test('deletes a repeating activity on the chosen days', async () => {
+  // This day starts selected, and the other dates can be added to it.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+  await addActivity('Gym', '1630', 'Mon');
+
+  await fireEvent.press(screen.getByLabelText('Delete Gym'));
+  await fireEvent.press(screen.getByRole('radio', { name: 'Some days' }));
+  expect(
+    screen.getByRole('checkbox', { name: 'Mon 2 Nov', checked: true }),
+  ).toBeTruthy();
+  await fireEvent.press(screen.getByRole('checkbox', { name: 'Mon 9 Nov' }));
+  await fireEvent.press(screen.getByText('Delete'));
+
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  expect(screen.getByText('Next · Mon 16 November')).toBeTruthy();
+});
+
+test('cannot confirm without any chosen day', async () => {
+  // Deselecting every date must not delete anything.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+  await addActivity('Gym', '1630', 'Mon');
+
+  await fireEvent.press(screen.getByLabelText('Delete Gym'));
+  await fireEvent.press(screen.getByRole('radio', { name: 'Some days' }));
+  await fireEvent.press(screen.getByRole('checkbox', { name: 'Mon 2 Nov' }));
+  await fireEvent.press(screen.getByText('Delete'));
+
+  expect(screen.getByText('Delete “Gym”?')).toBeTruthy();
+  expect(screen.getByText('Gym')).toBeTruthy();
+});
+
+test('deletes all the repetitions of an activity', async () => {
+  // Delete all removes the whole series, so the calendar has nothing coming up.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+  await addActivity('Gym', '1630', 'Mon');
+
+  await fireEvent.press(screen.getByLabelText('Delete Gym'));
+  await fireEvent.press(screen.getByRole('radio', { name: 'Delete all' }));
+  await fireEvent.press(screen.getByText('Delete'));
+
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  expect(screen.getByText('No upcoming activities')).toBeTruthy();
+});
+
+test('shows the time between two activities of a day', async () => {
+  // The free time is written between the cards, in hours or in minutes.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+
+  await addActivity('Morning run', '0900');
+  await addActivity('Call', '1100');
+
+  expect(screen.getByText('1 h 30 min')).toBeTruthy();
+});
+
+test('opens today from the shortcuts wherever the selection is', async () => {
+  // My day always goes to today, and the day screen opens without the popup.
+  await render(<CalendarScreen today={today} />);
+  await openDay('15');
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+
+  await fireEvent.press(screen.getByLabelText('My day'));
+
+  expect(screen.getByText('2 November · today')).toBeTruthy();
+  expect(screen.queryByText('New activity')).toBeNull();
+});
+
+test('adds an activity on a day chosen in the bar popup', async () => {
+  // The main button lets the day be chosen in the popup, without opening it first.
+  await render(<CalendarScreen today={today} />);
+
+  await fireEvent.press(screen.getByLabelText('Add activity'));
+  expect(
+    screen.getByRole('radio', { name: 'Mon 2 November', checked: true }),
+  ).toBeTruthy();
+
+  await fireEvent.press(screen.getByRole('radio', { name: 'Mon 9 November' }));
+  expect(screen.getByText('9 November')).toBeTruthy();
+
+  await fireEvent.changeText(screen.getByLabelText('Activity title'), 'Call');
+  await fireEvent.changeText(screen.getByLabelText('Start time'), '1630');
+  await fireEvent.press(screen.getByText('Add'));
+
+  expect(screen.queryByText('New activity')).toBeNull();
+  expect(screen.getByText('Next · Mon 9 November')).toBeTruthy();
+  expect(screen.getByTestId('activity-dot-9')).toBeTruthy();
+});
+
+test('does not offer the day choice in the popup of a day', async () => {
+  // In the day screen the day is already chosen, so the popup stays shorter.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+
+  await fireEvent.press(screen.getByLabelText('Add activity'));
+
+  expect(screen.getByText('New activity')).toBeTruthy();
+  expect(screen.queryByRole('radio', { name: 'Mon 9 November' })).toBeNull();
+});
+
+test('shows the storage and deletes old activities from the settings', async () => {
+  // Only the activities older than the chosen period are removed, after a confirmation.
+  await render(<CalendarScreen today={today} />);
+  await fireEvent.press(screen.getByLabelText('Previous month'));
+  await fireEvent.press(screen.getByLabelText('Previous month'));
+  await openDay('1');
+  await addActivity('Old call', '1630');
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+
+  await fireEvent.press(screen.getByLabelText('Settings'));
+  expect(await screen.findByText('8 KB')).toBeTruthy();
+  expect(screen.getByLabelText('Older than a year')).toBeDisabled();
+
+  await fireEvent.press(screen.getByLabelText('Older than a month'));
+  expect(screen.getByText('Delete 1 old activity?')).toBeTruthy();
+  await fireEvent.press(screen.getByText('Cancel'));
+  expect(screen.queryByText('Delete 1 old activity?')).toBeNull();
+
+  await fireEvent.press(screen.getByLabelText('Older than a month'));
+  await fireEvent.press(screen.getByText('Delete'));
+  expect(await screen.findByText('0 saved')).toBeTruthy();
+});
+
+test('marks the days with activities with a dot', async () => {
+  // A repeating activity marks all its days, white on today, and a deleted day loses its dot.
+  await render(<CalendarScreen today={today} />);
+  expect(screen.queryByTestId('activity-dot-2')).toBeNull();
+
+  await openDay('2');
+  await addActivity('Gym', '1630', 'Mon');
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+
+  expect(dotColor('2')).toBe(colors.surface);
+  expect(dotColor('9')).toBe(colors.primary);
+  expect(screen.queryByTestId('activity-dot-3')).toBeNull();
+
+  await openDay('9');
+  await fireEvent.press(screen.getByLabelText('Delete Gym'));
+  await fireEvent.press(screen.getByText('Delete'));
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+
+  expect(screen.queryByTestId('activity-dot-9')).toBeNull();
+  expect(screen.getByTestId('activity-dot-16')).toBeTruthy();
 });

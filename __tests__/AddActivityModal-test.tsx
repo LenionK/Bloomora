@@ -29,12 +29,14 @@ function valueOf(label: string) {
 }
 
 test('shows the selected day', async () => {
+  // The popup shows the day the activity will be added to.
   await renderModal();
 
   expect(screen.getByText('15 November')).toBeTruthy();
 });
 
 test('ends 30 minutes after the start by default', async () => {
+  // Only a title and a start are needed: the end is calculated and the title is trimmed.
   const onAdd = jest.fn();
   await renderModal(onAdd);
   expect(screen.queryByLabelText('Duration in minutes')).toBeNull();
@@ -57,6 +59,7 @@ test('ends 30 minutes after the start by default', async () => {
 });
 
 test('happens once by default and repeats on the selected days', async () => {
+  // Days can be toggled, and they are saved in order from Monday whatever the tap order.
   const onAdd = jest.fn();
   await renderModal(onAdd);
   expect(screen.getByText('Repeat: Once')).toBeTruthy();
@@ -78,6 +81,7 @@ test('happens once by default and repeats on the selected days', async () => {
 });
 
 test('keeps a typed end when the start changes', async () => {
+  // An end written by the user is never overwritten by the calculated one.
   const onAdd = jest.fn();
   await renderModal(onAdd);
 
@@ -98,6 +102,7 @@ test('keeps a typed end when the start changes', async () => {
 });
 
 test('moves the calculated end when the start changes', async () => {
+  // While the end is untouched, it follows the start.
   await renderModal();
 
   await type('Start time', '1630');
@@ -107,6 +112,7 @@ test('moves the calculated end when the start changes', async () => {
 });
 
 test('completes a partial time when leaving the field', async () => {
+  // Leaving a field turns 12:0 into 12:00 and 13:3 into 13:30.
   await renderModal();
 
   await type('Start time', '120');
@@ -120,6 +126,7 @@ test('completes a partial time when leaving the field', async () => {
 });
 
 test('keeps calculating the end after leaving it untouched', async () => {
+  // Tapping End without writing must not stop the automatic calculation.
   await renderModal();
 
   await fireEvent(screen.getByLabelText('End time'), 'blur');
@@ -132,6 +139,7 @@ test('keeps calculating the end after leaving it untouched', async () => {
 });
 
 test('uses a partial time when adding without leaving the field', async () => {
+  // Add can be pressed while the cursor is still in a partial time.
   const onAdd = jest.fn();
   await renderModal(onAdd);
 
@@ -148,6 +156,7 @@ test('uses a partial time when adding without leaving the field', async () => {
 });
 
 test('does not accept an impossible time', async () => {
+  // Digits that would make a time like 68:44 or 25:00 are dropped while typing.
   await renderModal();
 
   await type('Start time', '6844');
@@ -158,6 +167,7 @@ test('does not accept an impossible time', async () => {
 });
 
 test('colours the logo and title and saves the selected colour', async () => {
+  // The selected colour changes the logo and the title, and is saved with the activity.
   const onAdd = jest.fn();
   await renderModal(onAdd);
   expect(activityColors).toHaveLength(7);
@@ -179,6 +189,7 @@ test('colours the logo and title and saves the selected colour', async () => {
 });
 
 test('does not add a blank title', async () => {
+  // A title made only of spaces does not create an activity.
   const onAdd = jest.fn();
   await renderModal(onAdd);
 
@@ -194,6 +205,7 @@ test.each([
   ['no end', '1630', ''],
   ['an end before the start', '1630', '1600'],
 ])('shows an error with %s', async (_case, start, end) => {
+  // Add shows an error for a wrong time range, and the error goes away when the time changes.
   const onAdd = jest.fn();
   await renderModal(onAdd);
 
@@ -210,6 +222,7 @@ test.each([
 });
 
 test('closes without adding when cancelled', async () => {
+  // Cancel closes the popup and creates nothing.
   const onAdd = jest.fn();
   const onClose = jest.fn();
   await renderModal(onAdd, onClose);

@@ -3,6 +3,7 @@ import { NewActivity } from '../components/AddActivityModal';
 export type Activity = NewActivity & {
   id: string;
   completedDates: string[];
+  skippedDates: string[];
 };
 
 export type Occurrence = {
@@ -11,8 +12,10 @@ export type Occurrence = {
   end: Date;
 };
 
-// Far enough to find the next repetition when the closest ones are completed.
-const NEXT_OCCURRENCE_SEARCH_DAYS = 14;
+export type CleanupPeriod = 'week' | 'month' | 'year';
+
+// Far enough to find the next repetition when the closest ones are completed or skipped.
+const OCCURRENCE_SEARCH_DAYS = 366;
 
 function startOfDay(date: Date): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -29,15 +32,45 @@ export function toDateKey(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+function isRepeating(activity: Activity): boolean {
+  return activity.repeatDays.length > 0;
+}
+
 export function occursOn(activity: Activity, date: Date): boolean {
   const day = startOfDay(date);
   const firstDay = startOfDay(activity.start);
+  const isScheduled = isRepeating(activity)
+    ? activity.repeatDays.includes((date.getDay() + 6) % 7) && day >= firstDay
+    : day === firstDay;
 
-  if (activity.repeatDays.length === 0) return day === firstDay;
+  return isScheduled && !activity.skippedDates.includes(toDateKey(date));
+}
 
-  const weekday = (date.getDay() + 6) % 7;
+export function getDaysWithActivities(
+  activities: Activity[],
+  year: number,
+  month: number,
+): Set<number> {
+  const days = new Set<number>();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  return activity.repeatDays.includes(weekday) && day >= firstDay;
+  for (const activity of activities) {
+    if (isRepeating(activity)) {
+      for (let day = 1; day <= daysInMonth; day++) {
+        if (!days.has(day) && occursOn(activity, new Date(year, month, day))) {
+          days.add(day);
+        }
+      }
+    } else if (
+      activity.start.getFullYear() === year &&
+      activity.start.getMonth() === month &&
+      occursOn(activity, activity.start)
+    ) {
+      days.add(activity.start.getDate());
+    }
+  }
+
+  return days;
 }
 
 export function getActivitiesForDate(activities: Activity[], date: Date): Activity[] {
@@ -61,6 +94,34 @@ export function toggleCompletedOn(activity: Activity, date: Date): Activity {
   };
 }
 
+export function skipDates(activity: Activity, dateKeys: string[]): Activity {
+  return {
+    ...activity,
+    skippedDates: [...activity.skippedDates, ...dateKeys],
+  };
+}
+
+export function getUpcomingDates(
+  activity: Activity,
+  from: Date,
+  count: number,
+): Date[] {
+  const dates: Date[] = [];
+
+  for (let offset = 0; offset < OCCURRENCE_SEARCH_DAYS; offset++) {
+    const date = new Date(
+      from.getFullYear(),
+      from.getMonth(),
+      from.getDate() + offset,
+    );
+
+    if (occursOn(activity, date)) dates.push(date);
+    if (dates.length === count) break;
+  }
+
+  return dates;
+}
+
 function withTimeOf(date: Date, time: Date): Date {
   return new Date(
     date.getFullYear(),
@@ -73,8 +134,9 @@ function withTimeOf(date: Date, time: Date): Date {
 
 function findNextOccurrence(activity: Activity, now: Date): Occurrence | null {
   const from = activity.start > now ? activity.start : now;
+  const searchDays = isRepeating(activity) ? OCCURRENCE_SEARCH_DAYS : 1;
 
-  for (let offset = 0; offset < NEXT_OCCURRENCE_SEARCH_DAYS; offset++) {
+  for (let offset = 0; offset < searchDays; offset++) {
     const date = new Date(
       from.getFullYear(),
       from.getMonth(),
@@ -88,6 +150,29 @@ function findNextOccurrence(activity: Activity, now: Date): Occurrence | null {
   }
 
   return null;
+}
+
+export function getCleanupCutoff(period: CleanupPeriod, now: Date): Date {
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const day = now.getDate();
+
+  if (period === 'week') return new Date(year, month, day - 7);
+  if (period === 'year') return new Date(year - 1, month, day);
+
+  const lastDayOfPreviousMonth = new Date(year, month, 0).getDate();
+
+  return new Date(year, month - 1, Math.min(day, lastDayOfPreviousMonth));
+}
+
+// Repeating activities have no end, so they are never considered old.
+export function getOldActivities(
+  activities: Activity[],
+  cutoff: Date,
+): Activity[] {
+  return activities.filter(
+    (activity) => !isRepeating(activity) && activity.end < cutoff,
+  );
 }
 
 export function getNextOccurrence(

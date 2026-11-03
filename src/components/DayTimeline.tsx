@@ -1,11 +1,18 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Activity, isCompletedOn } from '../calendar/activities';
-import { HOUR_HEIGHT, layoutDay } from '../calendar/dayLayout';
+import {
+  getDayGaps,
+  getTimeMarks,
+  HOUR_HEIGHT,
+  layoutDay,
+} from '../calendar/dayLayout';
+import { formatDuration } from '../calendar/time';
 import { colors } from '../theme';
 import ActivityCard from './ActivityCard';
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const CARD_GAP = 4;
+const TIME_LABEL_HEIGHT = 16;
 
 type Props = {
   date: Date;
@@ -22,6 +29,8 @@ export default function DayTimeline({
   onToggleCompleted,
   onDelete,
 }: Props) {
+  const positioned = layoutDay(activities);
+
   return (
     <ScrollView
       contentContainerStyle={styles.content}
@@ -31,38 +40,54 @@ export default function DayTimeline({
     >
       {HOURS.map((hour) => (
         <View key={hour} style={styles.hour}>
-          <Text style={styles.hourLabel}>
-            {String(hour).padStart(2, '0')}:00
-          </Text>
           <View style={styles.hourLine} />
         </View>
       ))}
 
+      <View style={styles.timeMarks}>
+        {getTimeMarks(activities).map(({ top, label, color }) => (
+          <Text
+            key={label}
+            style={[
+              styles.timeMark,
+              { top: top - TIME_LABEL_HEIGHT / 2 },
+              color ? { color, fontWeight: 'bold' } : undefined,
+            ]}
+          >
+            {label}
+          </Text>
+        ))}
+      </View>
+
       <View pointerEvents="box-none" style={styles.cards}>
-        {layoutDay(activities).map(
-          ({ activity, top, height, lane, laneCount }) => (
-            <View
-              key={activity.id}
-              style={[
-                styles.cardSlot,
-                {
-                  top,
-                  height: height - CARD_GAP,
-                  left: `${(lane / laneCount) * 100}%`,
-                  width: `${100 / laneCount}%`,
-                },
-              ]}
-            >
-              <ActivityCard
-                activity={activity}
-                isCompact={laneCount > 1}
-                isCompleted={isCompletedOn(activity, date)}
-                onDelete={() => onDelete(activity)}
-                onToggleCompleted={() => onToggleCompleted(activity)}
-              />
-            </View>
-          ),
-        )}
+        {getDayGaps(positioned).map(({ top, height, minutes }) => (
+          <View key={top} style={[styles.gap, { top, height }]}>
+            <Text style={styles.gapText}>{formatDuration(minutes)}</Text>
+          </View>
+        ))}
+
+        {positioned.map(({ activity, top, height, lane, laneCount }) => (
+          <View
+            key={activity.id}
+            style={[
+              styles.cardSlot,
+              {
+                top,
+                height: height - CARD_GAP,
+                left: `${(lane / laneCount) * 100}%`,
+                width: `${100 / laneCount}%`,
+              },
+            ]}
+          >
+            <ActivityCard
+              activity={activity}
+              isCompact={laneCount > 1}
+              isCompleted={isCompletedOn(activity, date)}
+              onDelete={() => onDelete(activity)}
+              onToggleCompleted={() => onToggleCompleted(activity)}
+            />
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -78,20 +103,24 @@ const styles = StyleSheet.create({
     paddingBottom: 112,
   },
   hour: {
-    flexDirection: 'row',
     height: HOUR_HEIGHT,
-  },
-  hourLabel: {
-    width: 48,
-    marginTop: -8,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.textSecondary,
+    marginLeft: 48,
   },
   hourLine: {
-    flex: 1,
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.textSecondary,
+  },
+  timeMarks: {
+    position: 'absolute',
+    top: 8,
+    left: 0,
+    width: 48,
+  },
+  timeMark: {
+    position: 'absolute',
+    fontSize: 12,
+    lineHeight: TIME_LABEL_HEIGHT,
+    color: colors.textSecondary,
   },
   cards: {
     position: 'absolute',
@@ -99,6 +128,19 @@ const styles = StyleSheet.create({
     bottom: 112,
     left: 48,
     right: 0,
+  },
+  gap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gapText: {
+    paddingHorizontal: 8,
+    fontSize: 12,
+    color: colors.textSecondary,
+    backgroundColor: colors.background,
   },
   cardSlot: {
     position: 'absolute',

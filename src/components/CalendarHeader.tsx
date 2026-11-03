@@ -9,7 +9,6 @@ type Props = {
   month: number;
   onPreviousMonth: () => void;
   onNextMonth: () => void;
-  onToday: () => void;
 };
 
 export default function CalendarHeader({
@@ -17,7 +16,6 @@ export default function CalendarHeader({
   month,
   onPreviousMonth,
   onNextMonth,
-  onToday,
 }: Props) {
   return (
     <>
@@ -26,14 +24,6 @@ export default function CalendarHeader({
           <Logo color={colors.primary} size={28} />
           <Text style={styles.logo}>Bloomora</Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={8}
-          onPress={onToday}
-          style={styles.todayButton}
-        >
-          <Text style={styles.todayButtonText}>Today</Text>
-        </Pressable>
       </View>
 
       <Text style={styles.year}>{year}</Text>
@@ -77,16 +67,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: colors.text,
-  },
-  todayButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-  },
-  todayButtonText: {
-    fontSize: 11,
-    color: colors.surface,
   },
   year: {
     marginTop: 24,
