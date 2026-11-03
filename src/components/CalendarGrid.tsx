@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Activity, getDaysWithActivities } from '../calendar/activities';
 import { buildMonthGrid, WEEKDAY_LABELS } from '../calendar/monthGrid';
@@ -18,6 +18,48 @@ type Props = {
   onSelectDate: (date: Date) => void;
 };
 
+type DayCellProps = {
+  day: number;
+  isToday: boolean;
+  isSelected: boolean;
+  hasActivities: boolean;
+  onSelectDay: (day: number) => void;
+};
+
+// Redrawn only when its own values change, so most of the grid is left alone.
+const DayCell = memo(function DayCell({
+  day,
+  isToday,
+  isSelected,
+  hasActivities,
+  onSelectDay,
+}: DayCellProps) {
+  return (
+    <Pressable
+      accessibilityHint={hasActivities ? 'Has activities' : undefined}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      onPress={() => onSelectDay(day)}
+      style={[
+        styles.day,
+        isToday && styles.today,
+        isSelected && !isToday && styles.selected,
+      ]}
+    >
+      {isSelected && isToday && <View style={styles.todaySelectedRing} />}
+      <View>
+        <Text style={[styles.dayText, isToday && styles.todayText]}>{day}</Text>
+        {hasActivities && (
+          <View
+            style={[styles.activityDot, isToday && styles.todayDot]}
+            testID={`activity-dot-${day}`}
+          />
+        )}
+      </View>
+    </Pressable>
+  );
+});
+
 export default function CalendarGrid({
   year,
   month,
@@ -26,6 +68,10 @@ export default function CalendarGrid({
   activities,
   onSelectDate,
 }: Props) {
+  const onSelectDay = useCallback(
+    (day: number) => onSelectDate(new Date(year, month, day)),
+    [year, month, onSelectDate],
+  );
   const cells = buildMonthGrid(year, month);
   const daysWithActivities = useMemo(
     () => getDaysWithActivities(activities, year, month),
@@ -53,34 +99,15 @@ export default function CalendarGrid({
         const hasActivities = day !== null && daysWithActivities.has(day);
 
         return (
-          <View key={`${year}-${month}-${index}`} style={styles.cell}>
+          <View key={index} style={styles.cell}>
             {day !== null && (
-              <Pressable
-                accessibilityHint={hasActivities ? 'Has activities' : undefined}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
-                onPress={() => onSelectDate(new Date(year, month, day))}
-                style={[
-                  styles.day,
-                  isToday && styles.today,
-                  isSelected && !isToday && styles.selected,
-                ]}
-              >
-                {isSelected && isToday && (
-                  <View style={styles.todaySelectedRing} />
-                )}
-                <View>
-                  <Text style={[styles.dayText, isToday && styles.todayText]}>
-                    {day}
-                  </Text>
-                  {hasActivities && (
-                    <View
-                      style={[styles.activityDot, isToday && styles.todayDot]}
-                      testID={`activity-dot-${day}`}
-                    />
-                  )}
-                </View>
-              </Pressable>
+              <DayCell
+                day={day}
+                hasActivities={hasActivities}
+                isSelected={isSelected}
+                isToday={isToday}
+                onSelectDay={onSelectDay}
+              />
             )}
           </View>
         );

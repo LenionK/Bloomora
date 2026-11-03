@@ -51,10 +51,10 @@ export default function CalendarScreen({ today = new Date() }: Props) {
   }, []);
   const monthSwipeHandlers = useMonthSwipe(changeMonth);
 
-  function openDay(date: Date) {
+  const openDay = useCallback((date: Date) => {
     setSelectedDate(date);
     setIsDayOpen(true);
-  }
+  }, []);
 
   function closeDay() {
     setVisibleMonth(
