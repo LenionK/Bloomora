@@ -10,8 +10,9 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.lenionk.bloomora",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#B5305E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -24,7 +25,15 @@
     "plugins": [
       "expo-font",
       "expo-asset",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F6F5F3",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ]
     ]
   }
 }
