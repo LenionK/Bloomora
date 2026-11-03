@@ -1,46 +1,28 @@
 import { memo } from 'react';
-import Svg, { Circle, ClipPath, Defs, Path, Rect } from 'react-native-svg';
-import { colors } from '../theme';
+import Svg, { Path } from 'react-native-svg';
 
 const PETALS = 8;
+// The part of a petal left visible by the next ones, with a gap around it. Each
+// petal only needs rotating, so the gaps show whatever is behind the logo.
 const PETAL_PATH =
-  'M0 0 C-16 -10 -18 -34 -6 -44 L0 -36 L6 -44 C18 -34 16 -10 0 0 Z';
+  'M-4.74 -5.15 L-5.05 -5.46 L-6.25 -6.86 L-6.73 -7.49 L-6.83 -7.66 L-7.05 -7.91 L-8.20 -9.61 L-8.55 -10.26 L-8.75 -10.54 L-8.95 -10.96 L-9.12 -11.24 L-9.70 -12.34 L-9.70 -12.39 L-9.92 -12.81 L-10.02 -13.11 L-10.25 -13.54 L-10.60 -14.46 L-10.70 -14.64 L-10.88 -15.19 L-10.98 -15.39 L-11.05 -15.69 L-11.15 -15.89 L-11.15 -15.96 L-11.80 -18.06 L-11.80 -18.19 L-11.92 -18.59 L-12.05 -19.24 L-12.10 -19.34 L-12.10 -19.46 L-12.27 -20.24 L-12.30 -20.59 L-12.40 -21.01 L-12.42 -21.36 L-12.48 -21.51 L-12.52 -22.14 L-12.58 -22.29 L-12.60 -22.79 L-12.62 -22.81 L-12.62 -23.04 L-12.65 -23.06 L-12.65 -23.54 L-12.67 -23.56 L-12.67 -23.81 L-12.70 -23.84 L-12.70 -24.31 L-12.73 -24.34 L-12.75 -26.09 L-12.73 -26.11 L-12.73 -26.84 L-12.70 -26.86 L-12.70 -27.34 L-12.67 -27.36 L-12.67 -27.84 L-12.65 -27.86 L-12.52 -29.34 L-12.48 -29.49 L-12.45 -29.81 L-12.38 -30.14 L-12.38 -30.31 L-12.27 -30.71 L-12.27 -30.86 L-12.25 -30.89 L-12.25 -31.04 L-12.17 -31.41 L-12.10 -31.59 L-11.95 -32.36 L-11.88 -32.54 L-11.83 -32.84 L-11.67 -33.24 L-11.62 -33.54 L-11.35 -34.31 L-11.35 -34.39 L-11.25 -34.56 L-11.10 -35.06 L-10.73 -35.89 L-10.65 -36.16 L-10.45 -36.54 L-10.30 -36.91 L-10.25 -36.96 L-9.67 -38.09 L-8.80 -39.49 L-8.58 -39.76 L-8.08 -40.49 L-7.77 -40.81 L-7.33 -41.39 L-6.16 -42.55 L-0.01 -34.35 L0.05 -34.39 L6.12 -42.51 L6.16 -42.52 L7.30 -41.39 L7.62 -40.96 L8.05 -40.49 L8.55 -39.76 L8.77 -39.49 L9.73 -37.96 L10.33 -36.81 L10.42 -36.54 L10.62 -36.16 L10.70 -35.89 L10.92 -35.44 L10.98 -35.24 L11.08 -35.06 L11.23 -34.56 L11.33 -34.39 L11.33 -34.31 L11.60 -33.54 L11.65 -33.24 L11.80 -32.84 L11.80 -32.74 L11.92 -32.36 L11.98 -32.09 L11.64 -31.88 L9.94 -30.60 L9.69 -30.35 L9.41 -30.15 L8.11 -28.95 L6.88 -27.69 L6.05 -26.79 L4.75 -25.16 L3.70 -23.71 L3.58 -23.46 L2.95 -22.54 L2.75 -22.14 L2.55 -21.86 L2.35 -21.44 L1.67 -20.24 L1.00 -18.84 L0.85 -18.41 L0.75 -18.24 L0.15 -16.74 L0.08 -16.44 L-0.02 -16.24 L-0.10 -15.94 L-0.25 -15.59 L-0.25 -15.51 L-0.55 -14.59 L-1.05 -12.64 L-1.10 -12.26 L-1.33 -11.19 L-1.35 -10.81 L-1.45 -10.39 L-1.50 -9.76 L-1.52 -9.74 L-1.58 -9.21 L-1.60 -9.19 L-1.62 -8.66 L-1.65 -8.64 L-1.65 -8.14 L-1.67 -8.11 L-1.67 -7.86 L-1.70 -7.84 L-1.73 -6.79 L-2.56 -6.52 L-3.36 -6.15 L-4.11 -5.67 Z';
 
 type Props = {
   size: number;
   color: string;
-  detailColor?: string;
 };
 
-export default memo(function Logo({
-  size,
-  color,
-  detailColor = colors.surface,
-}: Props) {
-  const petalStyle = {
-    d: PETAL_PATH,
-    fill: color,
-    stroke: detailColor,
-    strokeWidth: 2,
-  };
-
+export default memo(function Logo({ size, color }: Props) {
   return (
     <Svg height={size} viewBox="-50 -50 100 100" width={size}>
-      <Defs>
-        <ClipPath id="firstPetalLeftHalf">
-          <Rect height={100} width={50} x={-50} y={-50} />
-        </ClipPath>
-      </Defs>
       {Array.from({ length: PETALS }, (_, index) => (
         <Path
-          {...petalStyle}
+          d={PETAL_PATH}
+          fill={color}
           key={index}
           transform={`rotate(${(index * 360) / PETALS})`}
         />
       ))}
-      {/* Each petal covers the previous one, so the first must also cover the last. */}
-      <Path {...petalStyle} clipPath="url(#firstPetalLeftHalf)" />
-      <Circle fill={detailColor} r={7} />
     </Svg>
   );
 });
