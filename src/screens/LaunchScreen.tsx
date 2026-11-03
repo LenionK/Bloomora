@@ -5,7 +5,7 @@ import { colors } from '../theme';
 export default function LaunchScreen() {
   return (
     <View style={styles.container}>
-      <Logo color={colors.primary} detailColor={colors.background} size={200} />
+      <Logo color={colors.primary} size={200} />
       <Text style={styles.name}>Bloomora</Text>
     </View>
   );

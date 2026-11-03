@@ -32,7 +32,7 @@ export default function ActivityCard({
       testID={`activity-${activity.id}`}
     >
       {!isCompact && (
-        <Logo color={colors.surface} detailColor={activity.color} size={28} />
+        <Logo color={colors.surface} size={28} />
       )}
       <Pressable
         accessibilityLabel={`Edit ${activity.title}`}

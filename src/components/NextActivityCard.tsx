@@ -28,7 +28,7 @@ export default function NextActivityCard({ occurrence, onPress }: Props) {
       onPress={() => onPress(start)}
       style={[styles.card, { backgroundColor: activity.color }]}
     >
-      <Logo color={colors.surface} detailColor={activity.color} size={40} />
+      <Logo color={colors.surface} size={40} />
       <View style={styles.details}>
         <Text style={styles.label}>
           Next · {weekday} {start.getDate()} {MONTH_NAMES[start.getMonth()]}
