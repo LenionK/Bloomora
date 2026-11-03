@@ -9,7 +9,7 @@ export const CARD_GAP = 4;
 
 const HOURS_IN_DAY = 24;
 const MIN_CARD_HEIGHT = 64;
-const MIN_GAP_HEIGHT = 20;
+const MIN_GAP_HEIGHT = 24;
 const MIN_PIXELS_BETWEEN_TIME_MARKS = 16;
 
 export type PositionedActivity = {
@@ -24,6 +24,8 @@ export type DayGap = {
   top: number;
   height: number;
   minutes: number;
+  topColor: string;
+  bottomColor: string;
 };
 
 export type TimeMark = {
@@ -95,6 +97,7 @@ export function getDayGaps(positioned: PositionedActivity[]): DayGap[] {
   const gaps: DayGap[] = [];
   let latestEnd: number | null = null;
   let lowestBottom = 0;
+  let lowestColor = '';
 
   for (const { activity, top, height } of positioned) {
     const start = minutesOfDay(activity.start);
@@ -109,11 +112,16 @@ export function getDayGaps(positioned: PositionedActivity[]): DayGap[] {
         top: lowestBottom,
         height: top - lowestBottom,
         minutes: start - latestEnd,
+        topColor: lowestColor,
+        bottomColor: activity.color,
       });
     }
 
     latestEnd = Math.max(latestEnd ?? end, end);
-    lowestBottom = Math.max(lowestBottom, top + height);
+    if (top + height >= lowestBottom) {
+      lowestBottom = top + height;
+      lowestColor = activity.color;
+    }
   }
 
   return gaps;

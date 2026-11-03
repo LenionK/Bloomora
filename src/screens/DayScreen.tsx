@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   BackHandler,
   Pressable,
@@ -14,6 +14,7 @@ import {
   toDateKey,
 } from '../calendar/activities';
 import { MONTH_NAMES, WEEKDAY_NAMES } from '../calendar/monthGrid';
+import { useHorizontalSwipe } from '../calendar/useHorizontalSwipe';
 import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
 import DayTimeline from '../components/DayTimeline';
 import DeleteActivityModal from '../components/DeleteActivityModal';
@@ -77,11 +78,15 @@ export default function DayScreen({
     return () => subscription.remove();
   }, [onBack]);
 
-  function changeDay(offset: number) {
-    onChangeDate(
-      new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset),
-    );
-  }
+  const changeDay = useCallback(
+    (offset: number) => {
+      onChangeDate(
+        new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset),
+      );
+    },
+    [date, onChangeDate],
+  );
+  const daySwipeHandlers = useHorizontalSwipe(changeDay);
 
   function addActivity(activity: NewActivity) {
     onAdd(activity);
@@ -89,7 +94,7 @@ export default function DayScreen({
   }
 
   return (
-    <View style={styles.container}>
+    <View {...daySwipeHandlers} style={styles.container}>
       <View style={styles.topBar}>
         <Pressable
           accessibilityLabel="Back to calendar"

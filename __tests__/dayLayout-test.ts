@@ -121,7 +121,20 @@ test('measures the free time between activities', () => {
       top: 9 * COMPACT_HOUR_HEIGHT + HOUR_HEIGHT,
       height: COMPACT_HOUR_HEIGHT + HOUR_HEIGHT / 2,
       minutes: 90,
+      topColor: '#000000',
+      bottomColor: '#000000',
     },
+  ]);
+});
+
+test('colors a gap with the activities around it', () => {
+  // Above the gap is the card that ends lowest, even if another one started later.
+  const long = { ...activity('long', 9 * 60, 12 * 60), color: '#111111' };
+  const short = { ...activity('short', 9 * 60, 10 * 60), color: '#222222' };
+  const next = { ...activity('next', 14 * 60, 15 * 60), color: '#333333' };
+
+  expect(getDayGaps(layoutDay([long, short, next]))).toEqual([
+    expect.objectContaining({ topColor: '#111111', bottomColor: '#333333' }),
   ]);
 });
 

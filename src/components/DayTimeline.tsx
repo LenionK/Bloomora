@@ -6,14 +6,15 @@ import {
   getHourHeights,
   getTimelinePosition,
   getTimeMarks,
+  HOUR_HEIGHT,
   layoutDay,
 } from '../calendar/dayLayout';
 import { formatDuration } from '../calendar/time';
 import { colors } from '../theme';
 import ActivityCard from './ActivityCard';
+import GapLine from './GapLine';
 
 const TIME_LABEL_HEIGHT = 16;
-
 type Props = {
   date: Date;
   activities: Activity[];
@@ -47,6 +48,12 @@ export default function DayTimeline({
       {hourHeights.map((height, hour) => (
         <View key={hour} style={[styles.hour, { height }]}>
           <View style={styles.hourLine} />
+          {height === HOUR_HEIGHT && (
+            <View
+              style={[styles.hourLine, styles.halfHourLine]}
+              testID={`half-hour-line-${hour}`}
+            />
+          )}
         </View>
       ))}
 
@@ -66,11 +73,20 @@ export default function DayTimeline({
       </View>
 
       <View pointerEvents="box-none" style={styles.cards}>
-        {getDayGaps(positioned).map(({ top, height, minutes }) => (
-          <View key={top} style={[styles.gap, { top, height }]}>
-            <Text style={styles.gapText}>{formatDuration(minutes)}</Text>
-          </View>
-        ))}
+        {getDayGaps(positioned).map(
+          ({ top, height, minutes, topColor, bottomColor }) => (
+            <View key={top} style={[styles.gap, { top, height }]}>
+              <GapLine
+                bottomColor={bottomColor}
+                height={height}
+                topColor={topColor}
+              />
+              <View style={styles.gapLabel}>
+                <Text style={styles.gapText}>{formatDuration(minutes)}</Text>
+              </View>
+            </View>
+          ),
+        )}
 
         {positioned.map(({ activity, top, height, lane, laneCount }) => (
           <View
@@ -116,6 +132,13 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.textSecondary,
   },
+  halfHourLine: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    opacity: 0.4,
+  },
   timeMarks: {
     position: 'absolute',
     top: 8,
@@ -142,11 +165,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  gapText: {
+  gapLabel: {
     paddingHorizontal: 8,
-    fontSize: 12,
-    color: colors.textSecondary,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderRadius: 11,
+    borderColor: colors.text,
     backgroundColor: colors.background,
+  },
+  gapText: {
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.textSecondary,
   },
   cardSlot: {
     position: 'absolute',

@@ -18,7 +18,7 @@ export default function ConfirmModal({
   onClose,
 }: Props) {
   return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent>
+    <Modal onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <View style={styles.header}>

@@ -1,4 +1,4 @@
-import { ComponentRef, useRef, useState } from 'react';
+import { ComponentRef, useCallback, useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -18,7 +18,7 @@ import {
 } from '../calendar/time';
 import { colors } from '../theme';
 import ColorPicker from './ColorPicker';
-import DayStrip from './DayStrip';
+import DateInput from './DateInput';
 import Logo from './Logo';
 import RepeatPicker from './RepeatPicker';
 
@@ -45,7 +45,8 @@ export default function AddActivityModal({
   onAdd,
   onClose,
 }: Props) {
-  const [date, setDate] = useState(initialDate);
+  const [date, setDate] = useState<Date | null>(initialDate);
+  const [hasDateError, setHasDateError] = useState(false);
   const [title, setTitle] = useState(activityToEdit?.title ?? '');
   const [startText, setStartText] = useState(
     activityToEdit ? formatTime(activityToEdit.start) : '',
@@ -61,6 +62,19 @@ export default function AddActivityModal({
   const startInputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   const endText = typedEndText ?? getDefaultEndText(startText);
+  // The weekday helps only when the day is being chosen here.
+  const weekday =
+    date && firstSelectableDate
+      ? `${WEEKDAY_LABELS[(date.getDay() + 6) % 7]} `
+      : '';
+  const dateLabel = date
+    ? `${weekday}${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`
+    : 'Invalid date';
+
+  const changeDate = useCallback((newDate: Date | null) => {
+    setDate(newDate);
+    setHasDateError(false);
+  }, []);
 
   function changeStart(text: string) {
     setStartText(formatTimeInput(text));
@@ -76,11 +90,11 @@ export default function AddActivityModal({
     if (typedEndText !== null) setTypedEndText(completeTimeInput(typedEndText));
   }
 
-  function toDate(time: TimeOfDay) {
+  function toDate(day: Date, time: TimeOfDay) {
     return new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
+      day.getFullYear(),
+      day.getMonth(),
+      day.getDate(),
       time.hours,
       time.minutes,
     );
@@ -90,6 +104,11 @@ export default function AddActivityModal({
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
 
+    if (!date) {
+      setHasDateError(true);
+      return;
+    }
+
     const timeRange = parseTimeRange(startText, endText);
     if (!timeRange) {
       setHasTimeError(true);
@@ -98,15 +117,15 @@ export default function AddActivityModal({
 
     onAdd({
       title: trimmedTitle,
-      start: toDate(timeRange.start),
-      end: toDate(timeRange.end),
+      start: toDate(date, timeRange.start),
+      end: toDate(date, timeRange.end),
       color,
       repeatDays,
     });
   }
 
   return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent>
+    <Modal onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <View style={styles.header}>
@@ -116,18 +135,24 @@ export default function AddActivityModal({
               </Text>
               <Text style={styles.date}>
                 {activityToEdit && repeatDays.length > 0 && 'From '}
-                {date.getDate()} {MONTH_NAMES[date.getMonth()]}
+                {dateLabel}
               </Text>
             </View>
             <Logo color={color} size={44} />
           </View>
           {firstSelectableDate && (
-            <DayStrip
-              color={color}
+            <DateInput
               firstDate={firstSelectableDate}
-              onChange={setDate}
-              value={date}
+              initialDate={initialDate}
+              onChange={changeDate}
             />
+          )}
+          {firstSelectableDate && hasDateError && (
+            <Text style={[styles.errorText, styles.dateErrorText]}>
+              Enter a valid date from {firstSelectableDate.getDate()}{' '}
+              {MONTH_NAMES[firstSelectableDate.getMonth()]}{' '}
+              {firstSelectableDate.getFullYear()}
+            </Text>
           )}
           <TextInput
             accessibilityLabel="Activity title"
@@ -272,6 +297,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     fontSize: 12,
     color: colors.primary,
+  },
+  dateErrorText: {
+    marginTop: 0,
+    marginBottom: 12,
   },
   actions: {
     flexDirection: 'row',
