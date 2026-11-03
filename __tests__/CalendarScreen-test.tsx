@@ -229,7 +229,7 @@ test('moves a one-time activity to another day', async () => {
   await addActivity('Call', '1630');
 
   await fireEvent.press(screen.getByLabelText('Edit Call'));
-  await fireEvent.press(screen.getByRole('radio', { name: 'Mon 9 November' }));
+  await fireEvent.changeText(screen.getByLabelText('Day'), '09');
   await fireEvent.press(screen.getByText('Save'));
 
   expect(screen.queryByText('Call')).toBeNull();
@@ -248,7 +248,7 @@ test('edits all the repetitions of an activity from any of its days', async () =
 
   await fireEvent.press(screen.getByLabelText('Edit Gym'));
   expect(screen.getByText('From 2 November')).toBeTruthy();
-  expect(screen.queryByRole('radio', { name: 'Mon 9 November' })).toBeNull();
+  expect(screen.queryByLabelText('Day')).toBeNull();
 
   await fireEvent.changeText(screen.getByLabelText('Activity title'), 'Run');
   await fireEvent.press(screen.getByText('Save'));
@@ -371,12 +371,11 @@ test('adds an activity on a day chosen in the bar popup', async () => {
   await render(<CalendarScreen today={today} />);
 
   await fireEvent.press(screen.getByLabelText('Add activity'));
-  expect(
-    screen.getByRole('radio', { name: 'Mon 2 November', checked: true }),
-  ).toBeTruthy();
+  expect(screen.getByLabelText('Day').props.value).toBe('02');
+  expect(screen.getByText('Mon 2 November')).toBeTruthy();
 
-  await fireEvent.press(screen.getByRole('radio', { name: 'Mon 9 November' }));
-  expect(screen.getByText('9 November')).toBeTruthy();
+  await fireEvent.changeText(screen.getByLabelText('Day'), '09');
+  expect(screen.getByText('Mon 9 November')).toBeTruthy();
 
   await fireEvent.changeText(screen.getByLabelText('Activity title'), 'Call');
   await fireEvent.changeText(screen.getByLabelText('Start time'), '1630');
@@ -387,6 +386,31 @@ test('adds an activity on a day chosen in the bar popup', async () => {
   expect(screen.getByTestId('activity-dot-9')).toBeTruthy();
 });
 
+test('draws the half hour line only in the busy hours', async () => {
+  // Empty hours are compact, so a second line there would only add noise.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+  expect(screen.queryByTestId('half-hour-line-16')).toBeNull();
+
+  await addActivity('Call', '1630');
+
+  expect(screen.getByTestId('half-hour-line-16')).toBeTruthy();
+  expect(screen.queryByTestId('half-hour-line-10')).toBeNull();
+});
+
+test('connects the activities of a day with a line through the free time', async () => {
+  // The line shows that the number is the time between the two activities.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+
+  await addActivity('Call', '0900');
+  expect(screen.queryByTestId('day-gap-line')).toBeNull();
+
+  await addActivity('Gym', '1200');
+  expect(screen.getByTestId('day-gap-line')).toBeTruthy();
+  expect(screen.getByText('2 h 30 min')).toBeTruthy();
+});
+
 test('does not offer the day choice in the popup of a day', async () => {
   // In the day screen the day is already chosen, so the popup stays shorter.
   await render(<CalendarScreen today={today} />);
@@ -395,7 +419,7 @@ test('does not offer the day choice in the popup of a day', async () => {
   await fireEvent.press(screen.getByLabelText('Add activity'));
 
   expect(screen.getByText('New activity')).toBeTruthy();
-  expect(screen.queryByRole('radio', { name: 'Mon 9 November' })).toBeNull();
+  expect(screen.queryByLabelText('Day')).toBeNull();
 });
 
 test('shows the storage and deletes old activities from the settings', async () => {

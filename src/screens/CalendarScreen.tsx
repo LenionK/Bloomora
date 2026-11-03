@@ -6,7 +6,7 @@ import {
   skipDates,
   toggleCompletedOn,
 } from '../calendar/activities';
-import { useMonthSwipe } from '../calendar/useMonthSwipe';
+import { useHorizontalSwipe } from '../calendar/useHorizontalSwipe';
 import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
 import CalendarGrid from '../components/CalendarGrid';
 import CalendarHeader from '../components/CalendarHeader';
@@ -49,7 +49,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         new Date(current.getFullYear(), current.getMonth() + offset, 1),
     );
   }, []);
-  const monthSwipeHandlers = useMonthSwipe(changeMonth);
+  const monthSwipeHandlers = useHorizontalSwipe(changeMonth);
 
   const openDay = useCallback((date: Date) => {
     setSelectedDate(date);

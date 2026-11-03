@@ -35,6 +35,98 @@ test('shows the selected day', async () => {
   expect(screen.getByText('15 November')).toBeTruthy();
 });
 
+async function renderWithDateInput(onAdd = jest.fn()) {
+  await render(
+    <AddActivityModal
+      date={date}
+      firstSelectableDate={date}
+      onAdd={onAdd}
+      onClose={jest.fn()}
+    />,
+  );
+}
+
+test('offers the date fields only when the day can be chosen', async () => {
+  // The popup of a day keeps its fixed day, without the weekday or the fields.
+  await renderModal();
+  expect(screen.queryByLabelText('Day')).toBeNull();
+  await screen.unmount();
+
+  await renderWithDateInput();
+  expect(valueOf('Day')).toBe('15');
+  expect(valueOf('Month')).toBe('11');
+  expect(valueOf('Year')).toBe('2026');
+  expect(screen.getByText('Sun 15 November')).toBeTruthy();
+});
+
+test('adds the activity on the typed date', async () => {
+  // The typed date replaces the initial one, and the title shows its weekday.
+  const onAdd = jest.fn();
+  await renderWithDateInput(onAdd);
+
+  await type('Day', '4');
+  await type('Month', '12');
+  await type('Year', '2027');
+  expect(screen.getByText('Sat 4 December')).toBeTruthy();
+
+  await type('Activity title', 'Call');
+  await type('Start time', '1630');
+  await fireEvent.press(screen.getByText('Add'));
+
+  expect(onAdd).toHaveBeenCalledWith(
+    expect.objectContaining({
+      start: new Date(2027, 11, 4, 16, 30),
+      end: new Date(2027, 11, 4, 17, 0),
+    }),
+  );
+});
+
+test.each([
+  ['before the first date', '10'],
+  ['that does not exist', '31'],
+  ['that is incomplete', ''],
+])('does not add an activity on a date %s', async (_, day) => {
+  // The activity is kept in the popup until the date is corrected.
+  const onAdd = jest.fn();
+  await renderWithDateInput(onAdd);
+
+  await type('Day', day);
+  await type('Activity title', 'Call');
+  await type('Start time', '1630');
+  await fireEvent.press(screen.getByText('Add'));
+
+  expect(onAdd).not.toHaveBeenCalled();
+  expect(screen.getByText('Enter a valid date from 15 November 2026')).toBeTruthy();
+
+  await type('Day', '20');
+  expect(screen.queryByText('Enter a valid date from 15 November 2026')).toBeNull();
+  await fireEvent.press(screen.getByText('Add'));
+
+  expect(onAdd).toHaveBeenCalledTimes(1);
+});
+
+test('shows an invalid date in the title', async () => {
+  // A date that does not exist is never shown as if it were another one.
+  await renderWithDateInput();
+
+  await type('Day', '31');
+
+  expect(screen.getByText('Invalid date')).toBeTruthy();
+});
+
+test('completes the day and the month when they are left', async () => {
+  // One digit is enough while typing, and the zero appears at the end.
+  await renderWithDateInput();
+
+  await type('Day', '2');
+  await fireEvent(screen.getByLabelText('Day'), 'blur');
+  await type('Month', '1');
+  await fireEvent(screen.getByLabelText('Month'), 'blur');
+
+  expect(valueOf('Day')).toBe('02');
+  expect(valueOf('Month')).toBe('01');
+});
+
 test('ends 30 minutes after the start by default', async () => {
   // Only a title and a start are needed: the end is calculated and the title is trimmed.
   const onAdd = jest.fn();

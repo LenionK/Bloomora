@@ -4,7 +4,7 @@
 
 An ad-free calendar and day planner for your phone, built with React Native and Expo.
 
-> **Status:** early development. The project is set up, but the features below are not built yet.
+> **Status:** in active development. The features marked below work today, but no installable APK has been published yet.
 
 ## Why
 
@@ -12,10 +12,14 @@ Most calendar apps on the Play Store are full of ads or lock basic features behi
 
 ## Features
 
-- [x] Daily view to plan activities
-- [ ] Add, edit and delete activities
-- [x] Monthly calendar
-- [ ] Activities stored on the device, with no account needed
+- [x] Monthly calendar with the next activity always in view
+- [x] Daily timeline showing the free time between activities
+- [x] Add, edit and delete activities
+- [x] Activities that repeat on chosen weekdays, with single dates that can be skipped
+- [x] Daily progress on the activities marked as done
+- [x] Swipe between months and days
+- [x] Activities stored on the device, with no account needed
+- [x] Settings to see the space used and delete old activities
 - [ ] Export activities to an `.ics` file for Google Calendar and other calendar apps
 - [ ] Save activities directly to the phone's calendar
 
@@ -39,6 +43,14 @@ npx expo start
 ```
 
 Then scan the QR code with Expo Go. Your phone and computer must be on the same Wi-Fi network.
+
+To check the code:
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+```
 
 ## License
 
