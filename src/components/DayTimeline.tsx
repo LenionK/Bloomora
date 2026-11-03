@@ -1,17 +1,17 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Activity, isCompletedOn } from '../calendar/activities';
 import {
+  CARD_GAP,
   getDayGaps,
+  getHourHeights,
+  getTimelinePosition,
   getTimeMarks,
-  HOUR_HEIGHT,
   layoutDay,
 } from '../calendar/dayLayout';
 import { formatDuration } from '../calendar/time';
 import { colors } from '../theme';
 import ActivityCard from './ActivityCard';
 
-const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
-const CARD_GAP = 4;
 const TIME_LABEL_HEIGHT = 16;
 
 type Props = {
@@ -30,22 +30,26 @@ export default function DayTimeline({
   onDelete,
 }: Props) {
   const positioned = layoutDay(activities);
+  const hourHeights = getHourHeights(activities);
 
   return (
     <ScrollView
       contentContainerStyle={styles.content}
-      contentOffset={{ x: 0, y: initialHour * HOUR_HEIGHT }}
+      contentOffset={{
+        x: 0,
+        y: getTimelinePosition(hourHeights, initialHour * 60),
+      }}
       showsVerticalScrollIndicator={false}
       style={styles.scroll}
     >
-      {HOURS.map((hour) => (
-        <View key={hour} style={styles.hour}>
+      {hourHeights.map((height, hour) => (
+        <View key={hour} style={[styles.hour, { height }]}>
           <View style={styles.hourLine} />
         </View>
       ))}
 
       <View style={styles.timeMarks}>
-        {getTimeMarks(activities).map(({ top, label, color }) => (
+        {getTimeMarks(positioned).map(({ top, label, color }) => (
           <Text
             key={label}
             style={[
@@ -103,7 +107,6 @@ const styles = StyleSheet.create({
     paddingBottom: 112,
   },
   hour: {
-    height: HOUR_HEIGHT,
     marginLeft: 48,
   },
   hourLine: {

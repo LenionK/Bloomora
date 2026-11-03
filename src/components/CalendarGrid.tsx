@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
   },
   activityDot: {
     position: 'absolute',
-    top: 1,
-    right: -5,
+    top: -3,
+    alignSelf: 'center',
     width: 4,
     height: 4,
     borderRadius: 2,
