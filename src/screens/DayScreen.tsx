@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   BackHandler,
   Pressable,
   StyleSheet,
@@ -17,10 +16,13 @@ import {
 import { MONTH_NAMES, WEEKDAY_NAMES } from '../calendar/monthGrid';
 import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
 import DayTimeline from '../components/DayTimeline';
+import DeleteActivityModal from '../components/DeleteActivityModal';
 import ProgressRing from '../components/ProgressRing';
 import { colors } from '../theme';
 
 const DEFAULT_FIRST_HOUR = 8;
+const ARROW_SIZE = 44;
+const ARROW_GAP = 8;
 
 type Props = {
   date: Date;
@@ -31,6 +33,7 @@ type Props = {
   onAdd: (activity: NewActivity) => void;
   onToggleCompleted: (activity: Activity) => void;
   onDelete: (activity: Activity) => void;
+  onSkipDates: (activity: Activity, dateKeys: string[]) => void;
 };
 
 export default function DayScreen({
@@ -42,8 +45,12 @@ export default function DayScreen({
   onAdd,
   onToggleCompleted,
   onDelete,
+  onSkipDates,
 }: Props) {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState<Activity | null>(
+    null,
+  );
 
   const dayActivities = getActivitiesForDate(activities, date);
   const completedCount = dayActivities.filter((activity) =>
@@ -70,26 +77,6 @@ export default function DayScreen({
   function changeDay(offset: number) {
     onChangeDate(
       new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset),
-    );
-  }
-
-  function confirmDelete(activity: Activity) {
-    if (activity.repeatDays.length === 0) {
-      onDelete(activity);
-      return;
-    }
-
-    Alert.alert(
-      'Delete repeating activity?',
-      `This removes "${activity.title}" from all its days.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => onDelete(activity),
-        },
-      ],
     );
   }
 
@@ -141,10 +128,12 @@ export default function DayScreen({
           </Text>
         </View>
         {dayActivities.length > 0 && (
-          <ProgressRing
-            completed={completedCount}
-            total={dayActivities.length}
-          />
+          <View style={styles.ringSlot}>
+            <ProgressRing
+              completed={completedCount}
+              total={dayActivities.length}
+            />
+          </View>
         )}
       </View>
 
@@ -153,7 +142,7 @@ export default function DayScreen({
         date={date}
         initialHour={initialHour}
         key={dateKey}
-        onDelete={confirmDelete}
+        onDelete={setActivityToDelete}
         onToggleCompleted={onToggleCompleted}
       />
 
@@ -171,6 +160,22 @@ export default function DayScreen({
           date={date}
           onAdd={addActivity}
           onClose={() => setIsAddOpen(false)}
+        />
+      )}
+
+      {activityToDelete && (
+        <DeleteActivityModal
+          activity={activityToDelete}
+          date={date}
+          onClose={() => setActivityToDelete(null)}
+          onDeleteAll={() => {
+            onDelete(activityToDelete);
+            setActivityToDelete(null);
+          }}
+          onSkipDates={(dateKeys) => {
+            onSkipDates(activityToDelete, dateKeys);
+            setActivityToDelete(null);
+          }}
         />
       )}
     </View>
@@ -205,11 +210,11 @@ const styles = StyleSheet.create({
   },
   arrows: {
     flexDirection: 'row',
-    gap: 8,
+    gap: ARROW_GAP,
   },
   arrowButton: {
-    width: 44,
-    height: 44,
+    width: ARROW_SIZE,
+    height: ARROW_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -222,6 +227,10 @@ const styles = StyleSheet.create({
   },
   titles: {
     flex: 1,
+  },
+  ringSlot: {
+    width: ARROW_SIZE * 2 + ARROW_GAP,
+    alignItems: 'center',
   },
   weekday: {
     fontSize: 40,

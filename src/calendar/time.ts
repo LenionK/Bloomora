@@ -51,7 +51,16 @@ export function parseTime(text: string): TimeOfDay | null {
   return { hours, minutes };
 }
 
-function formatTimeOfDay(time: TimeOfDay): string {
+export function formatDuration(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  if (hours === 0) return `${minutes} min`;
+
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+}
+
+export function formatTimeOfDay(time: TimeOfDay): string {
   const hours = String(time.hours).padStart(2, '0');
   const minutes = String(time.minutes).padStart(2, '0');
 

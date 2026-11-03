@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Activity } from '../calendar/activities';
 import { WEEKDAY_LABELS } from '../calendar/monthGrid';
-import { formatTime } from '../calendar/time';
 import { colors } from '../theme';
 import Logo from './Logo';
 
@@ -21,7 +20,6 @@ export default function ActivityCard({
   onToggleCompleted,
   onDelete,
 }: Props) {
-  const time = `${formatTime(activity.start)}–${formatTime(activity.end)}`;
   const repeat = activity.repeatDays
     .map((day) => WEEKDAY_LABELS[day])
     .join(', ');
@@ -41,9 +39,11 @@ export default function ActivityCard({
         >
           {activity.title}
         </Text>
-        <Text numberOfLines={1} style={styles.time}>
-          {repeat ? `${time} · ${repeat}` : time}
-        </Text>
+        {repeat !== '' && (
+          <Text numberOfLines={1} style={styles.repeat}>
+            {repeat}
+          </Text>
+        )}
       </View>
       <Pressable
         accessibilityLabel={`${activity.title} done`}
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   completedTitle: {
     textDecorationLine: 'line-through',
   },
-  time: {
+  repeat: {
     marginTop: 2,
     fontSize: 12,
     color: colors.surface,

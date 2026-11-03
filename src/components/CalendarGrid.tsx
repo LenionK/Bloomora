@@ -1,12 +1,20 @@
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Activity, getDaysWithActivities } from '../calendar/activities';
 import { buildMonthGrid, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { colors } from '../theme';
+
+const CELL_HEIGHT = 56;
+// The weekday row plus the 6 weeks of the longest months, so that what is below
+// the calendar stays in the same place in every month.
+const MAX_ROWS = 7;
 
 type Props = {
   year: number;
   month: number;
   today: Date;
   selectedDate: Date;
+  activities: Activity[];
   onSelectDate: (date: Date) => void;
 };
 
@@ -15,9 +23,14 @@ export default function CalendarGrid({
   month,
   today,
   selectedDate,
+  activities,
   onSelectDate,
 }: Props) {
   const cells = buildMonthGrid(year, month);
+  const daysWithActivities = useMemo(
+    () => getDaysWithActivities(activities, year, month),
+    [activities, year, month],
+  );
   const isCurrentMonth =
     year === today.getFullYear() && month === today.getMonth();
 
@@ -37,11 +50,13 @@ export default function CalendarGrid({
           selectedDate.getFullYear() === year &&
           selectedDate.getMonth() === month &&
           selectedDate.getDate() === day;
+        const hasActivities = day !== null && daysWithActivities.has(day);
 
         return (
           <View key={`${year}-${month}-${index}`} style={styles.cell}>
             {day !== null && (
               <Pressable
+                accessibilityHint={hasActivities ? 'Has activities' : undefined}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
                 onPress={() => onSelectDate(new Date(year, month, day))}
@@ -54,9 +69,17 @@ export default function CalendarGrid({
                 {isSelected && isToday && (
                   <View style={styles.todaySelectedRing} />
                 )}
-                <Text style={[styles.dayText, isToday && styles.todayText]}>
-                  {day}
-                </Text>
+                <View>
+                  <Text style={[styles.dayText, isToday && styles.todayText]}>
+                    {day}
+                  </Text>
+                  {hasActivities && (
+                    <View
+                      style={[styles.activityDot, isToday && styles.todayDot]}
+                      testID={`activity-dot-${day}`}
+                    />
+                  )}
+                </View>
               </Pressable>
             )}
           </View>
@@ -70,10 +93,12 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignContent: 'flex-start',
+    minHeight: CELL_HEIGHT * MAX_ROWS,
   },
   cell: {
     width: '14.2857%',
-    height: 56,
+    height: CELL_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -105,6 +130,18 @@ const styles = StyleSheet.create({
   selected: {
     borderWidth: 2,
     borderColor: colors.primary,
+  },
+  activityDot: {
+    position: 'absolute',
+    top: 1,
+    right: -5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+  },
+  todayDot: {
+    backgroundColor: colors.surface,
   },
   todaySelectedRing: {
     position: 'absolute',

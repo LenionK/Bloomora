@@ -1,17 +1,26 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
   Activity,
   getNextOccurrence,
+  skipDates,
   toggleCompletedOn,
 } from '../calendar/activities';
 import { useMonthSwipe } from '../calendar/useMonthSwipe';
-import { NewActivity } from '../components/AddActivityModal';
+import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
 import CalendarGrid from '../components/CalendarGrid';
 import CalendarHeader from '../components/CalendarHeader';
 import NextActivityCard from '../components/NextActivityCard';
+import ShortcutBar from '../components/ShortcutBar';
+import {
+  deleteActivities,
+  deleteActivity,
+  loadActivities,
+  saveActivity,
+} from '../storage/activityDatabase';
 import { colors } from '../theme';
 import DayScreen from './DayScreen';
+import SettingsScreen from './SettingsScreen';
 
 type Props = {
   today?: Date;
@@ -23,7 +32,13 @@ export default function CalendarScreen({ today = new Date() }: Props) {
   );
   const [selectedDate, setSelectedDate] = useState(today);
   const [isDayOpen, setIsDayOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
+
+  useEffect(() => {
+    loadActivities().then(setActivities).catch(console.error);
+  }, []);
 
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
@@ -35,11 +50,6 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     );
   }, []);
   const monthSwipeHandlers = useMonthSwipe(changeMonth);
-
-  function goToToday() {
-    setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelectedDate(today);
-  }
 
   function openDay(date: Date) {
     setSelectedDate(date);
@@ -53,23 +63,61 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     setIsDayOpen(false);
   }
 
-  function addActivity(activity: NewActivity) {
-    setActivities([
-      ...activities,
-      { ...activity, id: String(Date.now()), completedDates: [] },
-    ]);
-  }
+  async function deleteOldActivities(oldActivities: Activity[]) {
+    const oldIds = oldActivities.map(({ id }) => id);
 
-  function toggleCompleted(activity: Activity) {
-    setActivities(
-      activities.map((item) =>
-        item.id === activity.id ? toggleCompletedOn(item, selectedDate) : item,
-      ),
+    await deleteActivities(oldIds);
+    setActivities((current) =>
+      current.filter(({ id }) => !oldIds.includes(id)),
     );
   }
 
-  function deleteActivity(activity: Activity) {
+  function addActivity(activity: NewActivity) {
+    const newActivity = {
+      ...activity,
+      id: String(Date.now()),
+      completedDates: [],
+      skippedDates: [],
+    };
+
+    setActivities([...activities, newActivity]);
+    saveActivity(newActivity).catch(console.error);
+  }
+
+  function toggleCompleted(activity: Activity) {
+    const updated = toggleCompletedOn(activity, selectedDate);
+
+    setActivities(
+      activities.map((item) => (item.id === updated.id ? updated : item)),
+    );
+    saveActivity(updated).catch(console.error);
+  }
+
+  function removeActivity(activity: Activity) {
     setActivities(activities.filter((item) => item.id !== activity.id));
+    deleteActivity(activity.id).catch(console.error);
+  }
+
+  function skipActivityDates(activity: Activity, dateKeys: string[]) {
+    const updated = skipDates(activity, dateKeys);
+
+    setActivities(
+      activities.map((item) => (item.id === updated.id ? updated : item)),
+    );
+    saveActivity(updated).catch(console.error);
+  }
+
+  if (isSettingsOpen) {
+    return (
+      <SettingsScreen
+        activities={activities}
+        onBack={() => setIsSettingsOpen(false)}
+        onDeleteOld={(oldActivities) => {
+          deleteOldActivities(oldActivities).catch(console.error);
+        }}
+        today={today}
+      />
+    );
   }
 
   if (isDayOpen) {
@@ -80,7 +128,8 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         onAdd={addActivity}
         onBack={closeDay}
         onChangeDate={setSelectedDate}
-        onDelete={deleteActivity}
+        onDelete={removeActivity}
+        onSkipDates={skipActivityDates}
         onToggleCompleted={toggleCompleted}
         today={today}
       />
@@ -95,7 +144,6 @@ export default function CalendarScreen({ today = new Date() }: Props) {
           month={month}
           onPreviousMonth={() => changeMonth(-1)}
           onNextMonth={() => changeMonth(1)}
-          onToday={goToToday}
         />
 
         <CalendarGrid
@@ -103,6 +151,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
           month={month}
           today={today}
           selectedDate={selectedDate}
+          activities={activities}
           onSelectDate={openDay}
         />
       </View>
@@ -113,6 +162,41 @@ export default function CalendarScreen({ today = new Date() }: Props) {
           onPress={(date) => openDay(date)}
         />
       </View>
+
+      <View style={styles.shortcuts}>
+        <ShortcutBar
+          shortcuts={[
+            {
+              label: 'My day',
+              icon: 'today-outline',
+              onPress: () => openDay(today),
+            },
+            {
+              label: 'Add activity',
+              icon: 'add',
+              isMain: true,
+              onPress: () => setIsQuickAddOpen(true),
+            },
+            {
+              label: 'Settings',
+              icon: 'settings-outline',
+              onPress: () => setIsSettingsOpen(true),
+            },
+          ]}
+        />
+      </View>
+
+      {isQuickAddOpen && (
+        <AddActivityModal
+          date={today}
+          firstSelectableDate={today}
+          onAdd={(activity) => {
+            addActivity(activity);
+            setIsQuickAddOpen(false);
+          }}
+          onClose={() => setIsQuickAddOpen(false)}
+        />
+      )}
     </View>
   );
 }
@@ -125,7 +209,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   nextActivity: {
-    marginTop: 'auto',
-    marginBottom: 32,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  shortcuts: {
+    marginBottom: 24,
   },
 });

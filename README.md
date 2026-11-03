@@ -12,9 +12,9 @@ Most calendar apps on the Play Store are full of ads or lock basic features behi
 
 ## Features
 
-- [ ] Daily view to plan activities
+- [x] Daily view to plan activities
 - [ ] Add, edit and delete activities
-- [ ] Weekly and monthly calendar
+- [x] Monthly calendar
 - [ ] Activities stored on the device, with no account needed
 - [ ] Export activities to an `.ics` file for Google Calendar and other calendar apps
 - [ ] Save activities directly to the phone's calendar
