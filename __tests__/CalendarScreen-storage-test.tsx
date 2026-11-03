@@ -36,6 +36,17 @@ test('loads saved activities, then saves and deletes changes', async () => {
     expect.objectContaining({ id: '1', completedDates: ['2026-11-03'] }),
   );
 
+  await fireEvent.press(screen.getByLabelText('Edit Gym'));
+  await fireEvent.changeText(screen.getByLabelText('End time'), '1800');
+  await fireEvent.press(screen.getByText('Save'));
+  expect(saveActivity).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      id: '1',
+      end: new Date(2026, 10, 3, 18, 0),
+      completedDates: ['2026-11-03'],
+    }),
+  );
+
   await fireEvent.press(screen.getByLabelText('Delete Gym'));
   await fireEvent.press(screen.getByText('Delete'));
   expect(deleteActivity).toHaveBeenCalledWith('1');

@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { toDateKey } from '../calendar/activities';
 import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { colors } from '../theme';
 
 const DAYS_SHOWN = 60;
+const DAY_WIDTH = 44;
+const DAY_GAP = 8;
 
 type Props = {
   firstDate: Date;
@@ -23,10 +26,16 @@ export default function DayStrip({ firstDate, value, color, onChange }: Props) {
         firstDate.getDate() + offset,
       ),
   );
+  // Read once, so that choosing a day does not move the strip under the finger.
+  const [initialOffset] = useState(
+    Math.max(dates.findIndex((date) => toDateKey(date) === selectedKey), 0) *
+      (DAY_WIDTH + DAY_GAP),
+  );
 
   return (
     <ScrollView
       contentContainerStyle={styles.content}
+      contentOffset={{ x: initialOffset, y: 0 }}
       horizontal
       keyboardShouldPersistTaps="handled"
       showsHorizontalScrollIndicator={false}
@@ -65,10 +74,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   content: {
-    gap: 8,
+    gap: DAY_GAP,
   },
   day: {
-    width: 44,
+    width: DAY_WIDTH,
     height: 56,
     alignItems: 'center',
     justifyContent: 'center',

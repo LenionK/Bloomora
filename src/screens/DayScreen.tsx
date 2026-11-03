@@ -32,6 +32,7 @@ type Props = {
   onChangeDate: (date: Date) => void;
   onAdd: (activity: NewActivity) => void;
   onToggleCompleted: (activity: Activity) => void;
+  onEdit: (activity: Activity, changes: NewActivity) => void;
   onDelete: (activity: Activity) => void;
   onSkipDates: (activity: Activity, dateKeys: string[]) => void;
 };
@@ -44,10 +45,12 @@ export default function DayScreen({
   onChangeDate,
   onAdd,
   onToggleCompleted,
+  onEdit,
   onDelete,
   onSkipDates,
 }: Props) {
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
   const [activityToDelete, setActivityToDelete] = useState<Activity | null>(
     null,
   );
@@ -143,6 +146,7 @@ export default function DayScreen({
         initialHour={initialHour}
         key={dateKey}
         onDelete={setActivityToDelete}
+        onEdit={setActivityToEdit}
         onToggleCompleted={onToggleCompleted}
       />
 
@@ -160,6 +164,23 @@ export default function DayScreen({
           date={date}
           onAdd={addActivity}
           onClose={() => setIsAddOpen(false)}
+        />
+      )}
+
+      {activityToEdit && (
+        <AddActivityModal
+          activityToEdit={activityToEdit}
+          date={activityToEdit.start}
+          firstSelectableDate={
+            activityToEdit.repeatDays.length === 0
+              ? new Date(Math.min(today.getTime(), activityToEdit.start.getTime()))
+              : undefined
+          }
+          onAdd={(changes) => {
+            onEdit(activityToEdit, changes);
+            setActivityToEdit(null);
+          }}
+          onClose={() => setActivityToEdit(null)}
         />
       )}
 

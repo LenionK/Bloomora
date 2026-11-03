@@ -84,6 +84,15 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     saveActivity(newActivity).catch(console.error);
   }
 
+  function editActivity(activity: Activity, changes: NewActivity) {
+    const updated = { ...activity, ...changes };
+
+    setActivities(
+      activities.map((item) => (item.id === updated.id ? updated : item)),
+    );
+    saveActivity(updated).catch(console.error);
+  }
+
   function toggleCompleted(activity: Activity) {
     const updated = toggleCompletedOn(activity, selectedDate);
 
@@ -129,6 +138,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         onBack={closeDay}
         onChangeDate={setSelectedDate}
         onDelete={removeActivity}
+        onEdit={editActivity}
         onSkipDates={skipActivityDates}
         onToggleCompleted={toggleCompleted}
         today={today}

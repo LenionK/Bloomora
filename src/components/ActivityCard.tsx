@@ -10,6 +10,7 @@ type Props = {
   isCompleted: boolean;
   isCompact: boolean;
   onToggleCompleted: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 };
 
@@ -18,6 +19,7 @@ export default function ActivityCard({
   isCompleted,
   isCompact,
   onToggleCompleted,
+  onEdit,
   onDelete,
 }: Props) {
   const repeat = activity.repeatDays
@@ -32,7 +34,12 @@ export default function ActivityCard({
       {!isCompact && (
         <Logo color={colors.surface} detailColor={activity.color} size={28} />
       )}
-      <View style={styles.details}>
+      <Pressable
+        accessibilityLabel={`Edit ${activity.title}`}
+        accessibilityRole="button"
+        onPress={onEdit}
+        style={styles.details}
+      >
         <Text
           numberOfLines={1}
           style={[styles.title, isCompleted && styles.completedTitle]}
@@ -44,7 +51,7 @@ export default function ActivityCard({
             {repeat}
           </Text>
         )}
-      </View>
+      </Pressable>
       <Pressable
         accessibilityLabel={`${activity.title} done`}
         accessibilityRole="checkbox"
