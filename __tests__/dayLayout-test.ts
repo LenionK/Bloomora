@@ -1,6 +1,10 @@
 import { Activity } from '../src/calendar/activities';
 import {
+  CARD_GAP,
+  COMPACT_HOUR_HEIGHT,
   getDayGaps,
+  getHourHeights,
+  getTimelinePosition,
   getTimeMarks,
   HOUR_HEIGHT,
   layoutDay,
@@ -20,14 +24,47 @@ function activity(id: string, start: number, end: number): Activity {
 }
 
 function labels(activities: Activity[]) {
-  return getTimeMarks(activities).map(({ label }) => label);
+  return getTimeMarks(layoutDay(activities)).map(({ label }) => label);
 }
+
+test('compacts only the hours with no activity', () => {
+  // An hour stays wide even if an activity covers only a part of it.
+  const heights = getHourHeights([activity('a', 9 * 60 + 45, 10 * 60 + 15)]);
+
+  expect(heights).toHaveLength(24);
+  expect(heights[8]).toBe(COMPACT_HOUR_HEIGHT);
+  expect(heights[9]).toBe(HOUR_HEIGHT);
+  expect(heights[10]).toBe(HOUR_HEIGHT);
+  expect(heights[11]).toBe(COMPACT_HOUR_HEIGHT);
+});
+
+test('does not widen the hour where an activity ends exactly', () => {
+  // An activity ending at 10:00 has nothing to show in the following hour.
+  const heights = getHourHeights([activity('a', 9 * 60, 10 * 60)]);
+
+  expect(heights[9]).toBe(HOUR_HEIGHT);
+  expect(heights[10]).toBe(COMPACT_HOUR_HEIGHT);
+});
+
+test('finds a position across compact and wide hours', () => {
+  // Compact hours count less, and minutes are proportional inside their hour.
+  const heights = getHourHeights([activity('a', 2 * 60, 3 * 60)]);
+
+  expect(getTimelinePosition(heights, 0)).toBe(0);
+  expect(getTimelinePosition(heights, 2 * 60)).toBe(2 * COMPACT_HOUR_HEIGHT);
+  expect(getTimelinePosition(heights, 2 * 60 + 30)).toBe(
+    2 * COMPACT_HOUR_HEIGHT + HOUR_HEIGHT / 2,
+  );
+  expect(getTimelinePosition(heights, 3 * 60)).toBe(
+    2 * COMPACT_HOUR_HEIGHT + HOUR_HEIGHT,
+  );
+});
 
 test('places a card from its start time and duration', () => {
   // The position comes from the start time and the height from the duration.
   const [card] = layoutDay([activity('a', 9 * 60, 11 * 60)]);
 
-  expect(card.top).toBe(9 * HOUR_HEIGHT);
+  expect(card.top).toBe(9 * COMPACT_HOUR_HEIGHT);
   expect(card.height).toBe(2 * HOUR_HEIGHT);
   expect(card.lane).toBe(0);
   expect(card.laneCount).toBe(1);
@@ -80,7 +117,11 @@ test('measures the free time between activities', () => {
   );
 
   expect(gaps).toEqual([
-    { top: 10 * HOUR_HEIGHT, height: 1.5 * HOUR_HEIGHT, minutes: 90 },
+    {
+      top: 9 * COMPACT_HOUR_HEIGHT + HOUR_HEIGHT,
+      height: COMPACT_HOUR_HEIGHT + HOUR_HEIGHT / 2,
+      minutes: 90,
+    },
   ]);
 });
 
@@ -98,7 +139,7 @@ test('shows no gap when activities touch or there is no room', () => {
     getDayGaps(
       layoutDay([
         activity('a', 9 * 60, 9 * 60 + 5),
-        activity('b', 10 * 60, 11 * 60),
+        activity('b', 9 * 60 + 30, 11 * 60),
       ]),
     ),
   ).toHaveLength(0);
@@ -106,14 +147,33 @@ test('shows no gap when activities touch or there is no room', () => {
 
 test('adds activity times to the hours on the left', () => {
   // 08:30 and 09:15 are not hours, so they join the list in the colour of the activity.
-  const marks = getTimeMarks([activity('a', 8 * 60 + 30, 9 * 60 + 15)]);
+  const marks = getTimeMarks(layoutDay([activity('a', 8 * 60 + 30, 9 * 60 + 15)]));
   const start = marks.find(({ label }) => label === '08:30');
 
   expect(start?.color).toBe('#000000');
-  expect(start?.top).toBe(8.5 * HOUR_HEIGHT);
+  expect(start?.top).toBe(8 * COMPACT_HOUR_HEIGHT + HOUR_HEIGHT / 2);
   expect(marks.map(({ label }) => label)).toEqual(
     expect.arrayContaining(['08:00', '08:30', '09:00', '09:15', '10:00']),
   );
+});
+
+test('places the end time level with the bottom of its card', () => {
+  // This also holds for a short activity, whose card is taller than its duration.
+  for (const end of [9 * 60 + 5, 9 * 60 + 30, 11 * 60]) {
+    const positioned = layoutDay([activity('a', 9 * 60, end)]);
+    const [{ top, height }] = positioned;
+    const endLabel = `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
+    const mark = getTimeMarks(positioned).find(({ label }) => label === endLabel);
+
+    expect(mark?.top).toBe(top + height - CARD_GAP);
+  }
+});
+
+test('gives a 30 minute activity its real height', () => {
+  // The default duration needs no stretching, so the card follows the hour lines.
+  const [card] = layoutDay([activity('a', 9 * 60, 9 * 60 + 30)]);
+
+  expect(card.height).toBe(HOUR_HEIGHT / 2);
 });
 
 test('does not repeat a time already on the left', () => {

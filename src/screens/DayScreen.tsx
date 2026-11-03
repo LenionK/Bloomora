@@ -230,6 +230,7 @@ const styles = StyleSheet.create({
   },
   ringSlot: {
     width: ARROW_SIZE * 2 + ARROW_GAP,
+    marginTop: -16,
     alignItems: 'center',
   },
   weekday: {
@@ -245,11 +246,13 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    right: 16,
-    bottom: 32,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    right: 14,
+    bottom: 30,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
