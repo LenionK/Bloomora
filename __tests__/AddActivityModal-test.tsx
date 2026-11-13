@@ -280,8 +280,8 @@ test('colours the logo and title and saves the selected colour', async () => {
   expect(onAdd.mock.calls[0][0].color).toBe(blue);
 });
 
-test('does not add a blank title', async () => {
-  // A title made only of spaces does not create an activity.
+test('names an activity added without a title', async () => {
+  // No title, or only spaces, still adds the activity with a default name.
   const onAdd = jest.fn();
   await renderModal(onAdd);
 
@@ -289,7 +289,9 @@ test('does not add a blank title', async () => {
   await type('Start time', '1630');
   await fireEvent.press(screen.getByText('Add'));
 
-  expect(onAdd).not.toHaveBeenCalled();
+  expect(onAdd).toHaveBeenCalledWith(
+    expect.objectContaining({ title: 'Untitled activity' }),
+  );
 });
 
 test.each([

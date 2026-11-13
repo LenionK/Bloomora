@@ -3,11 +3,13 @@ import { Activity } from '../src/calendar/activities';
 import StatsScreen from '../src/screens/StatsScreen';
 import {
   loadKeptActivityStats,
+  loadStatsStart,
   loadWaterDays,
 } from '../src/storage/activityDatabase';
 
 jest.mock('../src/storage/activityDatabase', () => ({
   loadKeptActivityStats: jest.fn(),
+  loadStatsStart: jest.fn(),
   loadWaterDays: jest.fn(),
 }));
 
@@ -53,6 +55,22 @@ async function choose(label: string) {
 
 beforeEach(() => {
   jest.mocked(loadKeptActivityStats).mockResolvedValue(noKeptStats);
+  jest.mocked(loadStatsStart).mockResolvedValue(null);
+});
+
+test('counts nothing from before the last reset', async () => {
+  // After a reset on the 10th, the Monday of the 9th no longer counts.
+  jest.mocked(loadStatsStart).mockResolvedValue('2026-11-10');
+  const doneToday: Activity = {
+    ...mondays,
+    completedDates: ['2026-11-02', '2026-11-16'],
+  };
+
+  await renderStats([], [doneToday]);
+  await choose('Period: All time');
+
+  expect(screen.getByText('1 of 1')).toBeTruthy();
+  expect(screen.getByLabelText('Mon 9: nothing planned')).toBeTruthy();
 });
 
 test('adds the kept stats of deleted activities to the current ones', async () => {

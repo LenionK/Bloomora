@@ -4,12 +4,14 @@ import { DEFAULT_REMINDER_SETTINGS } from '../src/notifications/reminders';
 import SettingsScreen from '../src/screens/SettingsScreen';
 import {
   loadReminderSettings,
+  resetStats,
   saveReminderSettings,
 } from '../src/storage/activityDatabase';
 
 jest.mock('../src/storage/activityDatabase', () => ({
   getDatabaseSize: jest.fn(async () => 8192),
   loadReminderSettings: jest.fn(),
+  resetStats: jest.fn(async () => undefined),
   saveReminderSettings: jest.fn(async () => undefined),
 }));
 
@@ -117,6 +119,19 @@ test('explains when notifications are not allowed', async () => {
   await renderSettings();
 
   expect(await screen.findByText(/Notifications are not allowed/)).toBeTruthy();
+});
+
+test('resets the stats only after confirming', async () => {
+  // A reset cannot be undone, so it asks first and starts from today.
+  await renderSettings();
+
+  await fireEvent.press(screen.getByLabelText('Reset stats'));
+  expect(resetStats).not.toHaveBeenCalled();
+
+  await fireEvent.press(screen.getByText('Reset'));
+
+  expect(resetStats).toHaveBeenCalledWith('2026-11-16');
+  expect(await screen.findByText('Reset today')).toBeTruthy();
 });
 
 test('puts back the saved hours when the end is not after the start', async () => {
