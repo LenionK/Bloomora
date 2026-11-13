@@ -4,7 +4,9 @@ import {
   deleteActivity,
   getDatabaseSize,
   loadActivities,
+  loadWaterGlasses,
   saveActivity,
+  saveWaterGlasses,
 } from '../src/storage/activityDatabase';
 import { activityToRow } from '../src/storage/activityRow';
 
@@ -94,6 +96,36 @@ test('reads the size of the database', async () => {
   mockDatabase.getFirstAsync.mockResolvedValue({ size: 8192 });
 
   expect(await getDatabaseSize()).toBe(8192);
+});
+
+test('creates the water table with the activities one', async () => {
+  // A phone that already has activities gets the new table at the next opening.
+  const queries = await openDatabaseAtVersion(1);
+
+  expect(queries).toContain('CREATE TABLE IF NOT EXISTS water_days');
+});
+
+test('reads the glasses of a day, starting from zero', async () => {
+  // A day never saved has no row yet, which means no water drunk.
+  mockDatabase.getFirstAsync.mockResolvedValueOnce({ glasses: 4 });
+  expect(await loadWaterGlasses('2026-11-13')).toBe(4);
+  expect(mockDatabase.getFirstAsync).toHaveBeenLastCalledWith(
+    'SELECT glasses FROM water_days WHERE date = ?',
+    ['2026-11-13'],
+  );
+
+  mockDatabase.getFirstAsync.mockResolvedValueOnce(null);
+  expect(await loadWaterGlasses('2026-11-14')).toBe(0);
+});
+
+test('saves the glasses of a day', async () => {
+  // Saving the same day again replaces its count instead of adding a row.
+  await saveWaterGlasses('2026-11-13', 5);
+
+  expect(mockDatabase.runAsync).toHaveBeenLastCalledWith(
+    'INSERT OR REPLACE INTO water_days (date, glasses) VALUES (?, ?)',
+    ['2026-11-13', 5],
+  );
 });
 
 test('deletes an activity by id', async () => {

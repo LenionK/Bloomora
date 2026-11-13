@@ -17,6 +17,10 @@ async function openAndPrepare(): Promise<SQLiteDatabase> {
       repeat_days TEXT NOT NULL,
       completed_dates TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS water_days (
+      date TEXT PRIMARY KEY NOT NULL,
+      glasses INTEGER NOT NULL
+    );
   `);
 
   // user_version records which changes this database on the phone already has.
@@ -91,6 +95,29 @@ export async function deleteActivities(ids: string[]): Promise<void> {
 
   // SQLite keeps the freed space in its file until it is asked to give it back.
   await database.execAsync('VACUUM');
+}
+
+// A day with no row has had no water yet, so each day starts from zero.
+export async function loadWaterGlasses(dateKey: string): Promise<number> {
+  const database = await getDatabase();
+  const row = await database.getFirstAsync<{ glasses: number }>(
+    'SELECT glasses FROM water_days WHERE date = ?',
+    [dateKey],
+  );
+
+  return row?.glasses ?? 0;
+}
+
+export async function saveWaterGlasses(
+  dateKey: string,
+  glasses: number,
+): Promise<void> {
+  const database = await getDatabase();
+
+  await database.runAsync(
+    'INSERT OR REPLACE INTO water_days (date, glasses) VALUES (?, ?)',
+    [dateKey, glasses],
+  );
 }
 
 export async function getDatabaseSize(): Promise<number> {
