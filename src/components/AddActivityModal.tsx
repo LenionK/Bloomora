@@ -1,12 +1,11 @@
-import { ComponentRef, useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
+import { Text, TextInput, TextInputRef } from './AppText';
 import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import {
   completeTimeInput,
@@ -61,7 +60,7 @@ export default function AddActivityModal({
     activityToEdit?.repeatDays ?? [],
   );
   const [hasTimeError, setHasTimeError] = useState(false);
-  const startInputRef = useRef<ComponentRef<typeof TextInput>>(null);
+  const startInputRef = useRef<TextInputRef>(null);
 
   const endText = typedEndText ?? getDefaultEndText(startText);
   // The weekday helps only when the day is being chosen here.

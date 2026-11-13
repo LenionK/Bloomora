@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { colors } from '../theme';
 

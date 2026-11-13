@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { DayActivities } from '../stats/stats';
 import { colors } from '../theme';
 import ChartDayLabels, {

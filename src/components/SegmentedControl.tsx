@@ -4,10 +4,10 @@ import {
   LayoutChangeEvent,
   Pressable,
   StyleSheet,
-  Text,
   View,
   ViewStyle,
 } from 'react-native';
+import { Text } from './AppText';
 import { colors } from '../theme';
 
 const HEIGHT = 34;

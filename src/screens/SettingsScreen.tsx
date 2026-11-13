@@ -5,10 +5,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text, TextInput } from '../components/AppText';
 import {
   Activity,
   CleanupPeriod,
@@ -76,6 +76,7 @@ export default function SettingsScreen({
   onDeleteOld,
   onRemindersChange,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [databaseSize, setDatabaseSize] = useState<number | null>(null);
   const [activitiesToDelete, setActivitiesToDelete] = useState<
     Activity[] | null
@@ -172,7 +173,10 @@ export default function SettingsScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: 24 + insets.bottom },
+      ]}
       keyboardShouldPersistTaps="handled"
       style={styles.container}
     >

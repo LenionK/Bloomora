@@ -4,11 +4,12 @@ import {
   BackHandler,
   Pressable,
   StyleSheet,
-  Text,
   useWindowDimensions,
   Vibration,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '../components/AppText';
 import { toDateKey } from '../calendar/activities';
 import Confetti from '../components/Confetti';
 import GlassRow from '../components/GlassRow';
@@ -25,6 +26,12 @@ import {
   getWaterProgress,
   GLASS_ML,
 } from '../water/water';
+
+// Animated, but with the app's font like every other text.
+const AnimatedText = Animated.createAnimatedComponent(Text);
+
+// Room above the phone's own navigation, whether buttons or a gesture bar.
+const BOTTOM_SPACE = 24;
 
 // The square bottle drawing follows the screen height, within limits that keep
 // it readable, and never gets wider than the screen.
@@ -49,6 +56,7 @@ type Props = {
 };
 
 export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
+  const insets = useSafeAreaInsets();
   // Null until the saved count arrives, so an early tap cannot overwrite it.
   const [glasses, setGlasses] = useState<number | null>(null);
   const [lastChange, setLastChange] = useState<Change | null>(null);
@@ -140,7 +148,7 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: BOTTOM_SPACE + insets.bottom }]}>
       <ScreenHeader onBack={onBack} title="Water" />
 
       {/* Equal spaces above and below keep the bottle and glasses in the middle. */}
@@ -155,11 +163,11 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
         {/* The slot keeps its height, so the message does not move the glasses. */}
         <View style={styles.goalSlot}>
           {progress.glassesLeft === 0 && (
-            <Animated.Text
+            <AnimatedText
               style={[styles.goalReached, { transform: [{ scale: goalScale }] }]}
             >
               Goal reached 🎉
-            </Animated.Text>
+            </AnimatedText>
           )}
         </View>
 
@@ -181,7 +189,10 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
       </Text>
 
       {lastChange && (
-        <View accessibilityLiveRegion="polite" style={styles.undoBar}>
+        <View
+          accessibilityLiveRegion="polite"
+          style={[styles.undoBar, { bottom: BOTTOM_SPACE + insets.bottom }]}
+        >
           <Text style={styles.undoMessage}>{lastChange.message}</Text>
           <Pressable
             accessibilityLabel="Undo"
