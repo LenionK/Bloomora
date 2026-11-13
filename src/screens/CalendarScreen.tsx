@@ -18,9 +18,11 @@ import {
   loadActivities,
   saveActivity,
 } from '../storage/activityDatabase';
+import { getActivityStats } from '../stats/stats';
 import { colors } from '../theme';
 import DayScreen from './DayScreen';
 import SettingsScreen from './SettingsScreen';
+import StatsScreen from './StatsScreen';
 import WaterScreen from './WaterScreen';
 
 type Props = {
@@ -36,6 +38,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isWaterOpen, setIsWaterOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
   async function deleteOldActivities(oldActivities: Activity[]) {
     const oldIds = oldActivities.map(({ id }) => id);
 
-    await deleteActivities(oldIds);
+    await deleteActivities(oldIds, getActivityStats(oldActivities, today));
     setActivities((current) =>
       current.filter(({ id }) => !oldIds.includes(id)),
     );
@@ -106,7 +109,9 @@ export default function CalendarScreen({ today = new Date() }: Props) {
 
   function removeActivity(activity: Activity) {
     setActivities(activities.filter((item) => item.id !== activity.id));
-    deleteActivity(activity.id).catch(console.error);
+    deleteActivity(activity.id, getActivityStats([activity], today)).catch(
+      console.error,
+    );
   }
 
   function skipActivityDates(activity: Activity, dateKeys: string[]) {
@@ -126,6 +131,16 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         onDeleteOld={(oldActivities) => {
           deleteOldActivities(oldActivities).catch(console.error);
         }}
+        today={today}
+      />
+    );
+  }
+
+  if (isStatsOpen) {
+    return (
+      <StatsScreen
+        activities={activities}
+        onBack={() => setIsStatsOpen(false)}
         today={today}
       />
     );
@@ -197,6 +212,11 @@ export default function CalendarScreen({ today = new Date() }: Props) {
               icon: 'add',
               isMain: true,
               onPress: () => setIsQuickAddOpen(true),
+            },
+            {
+              label: 'Stats',
+              icon: 'person-outline',
+              onPress: () => setIsStatsOpen(true),
             },
             {
               label: 'Settings',

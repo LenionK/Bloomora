@@ -377,6 +377,18 @@ test('opens the water screen from the bar and goes back', async () => {
   expect(screen.getByText('November')).toBeTruthy();
 });
 
+test('opens the stats screen from the bar and goes back', async () => {
+  // The person icon leads to the scores, empty before anything is counted.
+  await render(<CalendarScreen today={today} />);
+
+  await fireEvent.press(screen.getByLabelText('Stats'));
+  expect(await screen.findByText('done on their day')).toBeTruthy();
+  expect(screen.getAllByText('–')).toHaveLength(2);
+
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  expect(screen.getByText('November')).toBeTruthy();
+});
+
 test('adds an activity on a day chosen in the bar popup', async () => {
   // The main button lets the day be chosen in the popup, without opening it first.
   await render(<CalendarScreen today={today} />);

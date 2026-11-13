@@ -1,6 +1,9 @@
 import { openDatabaseAsync, SQLiteDatabase } from 'expo-sqlite';
 import { Activity } from '../calendar/activities';
+import { ActivityStats, NO_ACTIVITY_STATS, WaterDay } from '../stats/stats';
 import { ActivityRow, activityToRow, rowToActivity } from './activityRow';
+
+const ACTIVITY_STATS_NAMES = ['done', 'skipped', 'missed'] as const;
 
 let databasePromise: Promise<SQLiteDatabase> | null = null;
 
@@ -20,6 +23,10 @@ async function openAndPrepare(): Promise<SQLiteDatabase> {
     CREATE TABLE IF NOT EXISTS water_days (
       date TEXT PRIMARY KEY NOT NULL,
       glasses INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS stats_totals (
+      name TEXT PRIMARY KEY NOT NULL,
+      value INTEGER NOT NULL
     );
   `);
 
@@ -76,18 +83,40 @@ export async function saveActivity(activity: Activity): Promise<void> {
   );
 }
 
-export async function deleteActivity(id: string): Promise<void> {
-  const database = await getDatabase();
-
-  await database.runAsync(
-    'DELETE FROM activities WHERE id = ?', [id]
-  );
+// Deleted activities leave their past days here, so the stats keep them.
+async function keepActivityStats(
+  database: SQLiteDatabase,
+  stats: ActivityStats,
+): Promise<void> {
+  for (const name of ACTIVITY_STATS_NAMES) {
+    await database.runAsync(
+      `INSERT INTO stats_totals (name, value) VALUES (?, ?)
+        ON CONFLICT(name) DO UPDATE SET value = value + excluded.value`,
+      [name, stats[name]],
+    );
+  }
 }
 
-export async function deleteActivities(ids: string[]): Promise<void> {
+export async function deleteActivity(
+  id: string,
+  pastStats: ActivityStats,
+): Promise<void> {
   const database = await getDatabase();
 
   await database.withTransactionAsync(async () => {
+    await keepActivityStats(database, pastStats);
+    await database.runAsync('DELETE FROM activities WHERE id = ?', [id]);
+  });
+}
+
+export async function deleteActivities(
+  ids: string[],
+  pastStats: ActivityStats,
+): Promise<void> {
+  const database = await getDatabase();
+
+  await database.withTransactionAsync(async () => {
+    await keepActivityStats(database, pastStats);
     for (const id of ids) {
       await database.runAsync('DELETE FROM activities WHERE id = ?', [id]);
     }
@@ -118,6 +147,28 @@ export async function saveWaterGlasses(
     'INSERT OR REPLACE INTO water_days (date, glasses) VALUES (?, ?)',
     [dateKey, glasses],
   );
+}
+
+export async function loadWaterDays(): Promise<WaterDay[]> {
+  const database = await getDatabase();
+
+  return database.getAllAsync<WaterDay>(
+    'SELECT date, glasses FROM water_days ORDER BY date',
+  );
+}
+
+export async function loadKeptActivityStats(): Promise<ActivityStats> {
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<{ name: string; value: number }>(
+    'SELECT name, value FROM stats_totals',
+  );
+  const stats = { ...NO_ACTIVITY_STATS };
+
+  for (const { name, value } of rows) {
+    if (name in stats) stats[name as keyof ActivityStats] = value;
+  }
+
+  return stats;
 }
 
 export async function getDatabaseSize(): Promise<number> {
