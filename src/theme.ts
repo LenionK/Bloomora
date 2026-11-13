@@ -6,6 +6,8 @@ export const colors = {
   backdrop: 'rgba(0, 0, 0, 0.4)',
   text: '#1D1B20',
   textSecondary: '#6B6870',
+  water: '#1F6FB5',
+  waterSoft: '#E3EEF8',
 };
 
 export const activityColors = [

@@ -21,6 +21,7 @@ import {
 import { colors } from '../theme';
 import DayScreen from './DayScreen';
 import SettingsScreen from './SettingsScreen';
+import WaterScreen from './WaterScreen';
 
 type Props = {
   today?: Date;
@@ -34,6 +35,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
   const [isDayOpen, setIsDayOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWaterOpen, setIsWaterOpen] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
@@ -129,6 +131,10 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     );
   }
 
+  if (isWaterOpen) {
+    return <WaterScreen onBack={() => setIsWaterOpen(false)} today={today} />;
+  }
+
   if (isDayOpen) {
     return (
       <DayScreen
@@ -180,6 +186,11 @@ export default function CalendarScreen({ today = new Date() }: Props) {
               label: 'My day',
               icon: 'today-outline',
               onPress: () => openDay(today),
+            },
+            {
+              label: 'Water',
+              icon: 'water-outline',
+              onPress: () => setIsWaterOpen(true),
             },
             {
               label: 'Add activity',

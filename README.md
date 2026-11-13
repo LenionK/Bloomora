@@ -20,6 +20,9 @@ Most calendar apps on the Play Store are full of ads or lock basic features behi
 - [x] Swipe between months and days
 - [x] Activities stored on the device, with no account needed
 - [x] Settings to see the space used and delete old activities
+- [x] Daily water tracker, filling a bottle one 200 ml glass at a time towards 2 litres
+- [ ] Notifications before activities and reminders to drink
+- [ ] Stats with water streaks and scores for activities and water
 - [ ] Export activities to an `.ics` file for Google Calendar and other calendar apps
 - [ ] Save activities directly to the phone's calendar
 

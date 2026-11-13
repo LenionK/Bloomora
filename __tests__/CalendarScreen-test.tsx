@@ -366,6 +366,17 @@ test('opens today from the shortcuts wherever the selection is', async () => {
   expect(screen.queryByText('New activity')).toBeNull();
 });
 
+test('opens the water screen from the bar and goes back', async () => {
+  // The drop in the bar leads to the water of today.
+  await render(<CalendarScreen today={today} />);
+
+  await fireEvent.press(screen.getByLabelText('Water'));
+  expect(await screen.findByText('0 L of 2 L')).toBeTruthy();
+
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  expect(screen.getByText('November')).toBeTruthy();
+});
+
 test('adds an activity on a day chosen in the bar popup', async () => {
   // The main button lets the day be chosen in the popup, without opening it first.
   await render(<CalendarScreen today={today} />);
