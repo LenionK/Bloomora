@@ -4,6 +4,8 @@ import {
   deleteActivity,
   getDatabaseSize,
   loadActivities,
+  loadKeptActivityStats,
+  loadWaterDays,
   loadWaterGlasses,
   saveActivity,
   saveWaterGlasses,
@@ -80,15 +82,61 @@ test('saves an activity with its values passed separately', async () => {
   expect(query.match(/\?/g)).toHaveLength(values.length);
 });
 
-test('deletes old activities together and frees their space', async () => {
-  // All the deletions succeed or fail together, then the file gets smaller.
+test('deletes old activities together, keeping their stats, and frees their space', async () => {
+  // Deletions and kept stats succeed or fail together, then the file gets smaller.
   mockDatabase.runAsync.mockClear();
+  mockDatabase.withTransactionAsync.mockClear();
 
-  await deleteActivities(['1', '2']);
+  await deleteActivities(['1', '2'], { done: 4, skipped: 1, missed: 2 });
 
   expect(mockDatabase.withTransactionAsync).toHaveBeenCalledTimes(1);
-  expect(mockDatabase.runAsync).toHaveBeenCalledTimes(2);
+  const queries = mockDatabase.runAsync.mock.calls;
+  expect(queries.filter(([query]) => query.includes('stats_totals'))).toEqual([
+    [expect.stringContaining('value = value + excluded.value'), ['done', 4]],
+    [expect.any(String), ['skipped', 1]],
+    [expect.any(String), ['missed', 2]],
+  ]);
+  expect(
+    queries.filter(([query]) => query.startsWith('DELETE FROM activities')),
+  ).toHaveLength(2);
   expect(mockDatabase.execAsync).toHaveBeenLastCalledWith('VACUUM');
+});
+
+test('keeps the stats of a single deleted activity', async () => {
+  // Deleting from the day screen keeps its past days in the stats too.
+  mockDatabase.runAsync.mockClear();
+
+  await deleteActivity('1', { done: 2, skipped: 0, missed: 1 });
+
+  expect(mockDatabase.runAsync).toHaveBeenCalledWith(
+    expect.stringContaining('INSERT INTO stats_totals'),
+    ['done', 2],
+  );
+});
+
+test('reads the kept stats, with zero for those never saved', async () => {
+  // Before any deletion the table is empty and every count is zero.
+  mockDatabase.getAllAsync.mockResolvedValueOnce([
+    { name: 'done', value: 7 },
+    { name: 'missed', value: 3 },
+  ]);
+
+  expect(await loadKeptActivityStats()).toEqual({
+    done: 7,
+    skipped: 0,
+    missed: 3,
+  });
+});
+
+test('reads every saved water day in date order', async () => {
+  // The stats need the days in order to find the streaks.
+  const waterDays = [{ date: '2026-11-13', glasses: 10 }];
+  mockDatabase.getAllAsync.mockResolvedValueOnce(waterDays);
+
+  expect(await loadWaterDays()).toEqual(waterDays);
+  expect(mockDatabase.getAllAsync).toHaveBeenLastCalledWith(
+    'SELECT date, glasses FROM water_days ORDER BY date',
+  );
 });
 
 test('reads the size of the database', async () => {
@@ -103,6 +151,7 @@ test('creates the water table with the activities one', async () => {
   const queries = await openDatabaseAtVersion(1);
 
   expect(queries).toContain('CREATE TABLE IF NOT EXISTS water_days');
+  expect(queries).toContain('CREATE TABLE IF NOT EXISTS stats_totals');
 });
 
 test('reads the glasses of a day, starting from zero', async () => {
@@ -130,7 +179,7 @@ test('saves the glasses of a day', async () => {
 
 test('deletes an activity by id', async () => {
   // Only the activity with that id is removed.
-  await deleteActivity('1');
+  await deleteActivity('1', { done: 0, skipped: 0, missed: 0 });
 
   expect(mockDatabase.runAsync).toHaveBeenLastCalledWith(
     'DELETE FROM activities WHERE id = ?',

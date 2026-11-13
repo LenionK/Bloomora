@@ -49,5 +49,10 @@ test('loads saved activities, then saves and deletes changes', async () => {
 
   await fireEvent.press(screen.getByLabelText('Delete Gym'));
   await fireEvent.press(screen.getByText('Delete'));
-  expect(deleteActivity).toHaveBeenCalledWith('1');
+  // The activity was not due yet, so it leaves nothing to keep in the stats.
+  expect(deleteActivity).toHaveBeenCalledWith('1', {
+    done: 0,
+    skipped: 0,
+    missed: 0,
+  });
 });
