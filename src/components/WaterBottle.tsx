@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { FONTS, Text } from './AppText';
 import Svg, {
   G,
   Line,
@@ -284,8 +290,8 @@ export default function WaterBottle({ share, size }: Props) {
               />
               <SvgText
                 fill={color}
+                fontFamily={markShare === 1 ? FONTS.bold : FONTS.regular}
                 fontSize={12}
-                fontWeight={markShare === 1 ? 'bold' : 'normal'}
                 opacity={isCovered ? 0.9 : 0.75}
                 x={60}
                 y={y + 4.5}

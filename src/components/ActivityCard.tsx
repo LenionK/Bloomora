@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Activity } from '../calendar/activities';
 import { WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { colors } from '../theme';

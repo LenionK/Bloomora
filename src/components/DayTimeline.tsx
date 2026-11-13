@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Activity, isCompletedOn } from '../calendar/activities';
 import {
   CARD_GAP,

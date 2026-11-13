@@ -1,5 +1,6 @@
 import { memo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text, TextInput } from './AppText';
 import { toDateKey } from '../calendar/activities';
 import {
   completeTwoDigitInput,

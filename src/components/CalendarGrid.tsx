@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Activity, getDaysWithActivities } from '../calendar/activities';
 import { buildMonthGrid, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { colors } from '../theme';
