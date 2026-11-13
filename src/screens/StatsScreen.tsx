@@ -19,6 +19,7 @@ import WaterChart, { UntrackedLegend } from '../components/WaterChart';
 import {
   ActivityStats,
   addActivityStats,
+  fromDateKey,
   getActivityStats,
   getPeriodStart,
   getRecentActivities,
@@ -30,6 +31,7 @@ import {
 } from '../stats/stats';
 import {
   loadKeptActivityStats,
+  loadStatsStart,
   loadWaterDays,
 } from '../storage/activityDatabase';
 import { cardShadow, colors } from '../theme';
@@ -100,11 +102,19 @@ export default function StatsScreen({
   const [waterDays, setWaterDays] = useState<WaterDay[] | null>(null);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [period, setPeriod] = useState<Period>('week');
+  // Undefined while loading, null when the stats were never reset.
+  const [statsStart, setStatsStart] = useState<string | null>();
   const periodFirstDay = getPeriodFirstDay(period, today);
+  // Nothing before the last reset counts, whatever the period.
+  const countFrom =
+    statsStart && (!periodFirstDay || toDateKey(periodFirstDay) < statsStart)
+      ? fromDateKey(statsStart)
+      : periodFirstDay;
 
   useEffect(() => {
     loadKeptActivityStats().then(setKeptStats).catch(console.error);
     loadWaterDays().then(setWaterDays).catch(console.error);
+    loadStatsStart().then(setStatsStart).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -151,19 +161,23 @@ export default function StatsScreen({
         value={period}
       />
 
-      {keptStats === null || waterDays === null ? (
+      {keptStats === null || waterDays === null || statsStart === undefined ? (
         <Text style={styles.loading}>…</Text>
       ) : (
         <StatsContent
           activities={activities}
           activityStats={
             periodFirstDay === null
-              ? addActivityStats(keptStats, getActivityStats(activities, today))
-              : getActivityStats(activities, today, periodFirstDay)
+              ? addActivityStats(
+                  keptStats,
+                  getActivityStats(activities, today, countFrom ?? undefined),
+                )
+              : getActivityStats(activities, today, countFrom ?? undefined)
           }
           onAddActivity={onAddActivity}
           onAddWater={onAddWater}
           periodFirstDay={periodFirstDay}
+          statsStart={statsStart}
           today={today}
           waterDays={waterDays}
         />
@@ -241,6 +255,7 @@ function StatsContent({
   activityStats,
   waterDays,
   periodFirstDay,
+  statsStart,
   today,
   onAddActivity,
   onAddWater,
@@ -250,6 +265,8 @@ function StatsContent({
   waterDays: WaterDay[];
   // Null for all time.
   periodFirstDay: Date | null;
+  // The day of the last reset, as a date key, or null.
+  statsStart: string | null;
   today: Date;
   onAddActivity: () => void;
   onAddWater: () => void;
@@ -379,7 +396,12 @@ function StatsContent({
         </View>
         {chart === 'activities' ? (
           <ActivityChart
-            days={getRecentActivities(activities, today, chartDays)}
+            days={getRecentActivities(activities, today, chartDays).map(
+              (day) =>
+                statsStart && toDateKey(day.date) < statsStart
+                  ? { ...day, done: 0, planned: 0 }
+                  : day,
+            )}
           />
         ) : (
           <WaterChart days={getRecentWater(waterDays, today, chartDays)} />

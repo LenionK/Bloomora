@@ -30,7 +30,7 @@ export const NO_ACTIVITY_STATS: ActivityStats = {
   missed: 0,
 };
 
-function fromDateKey(key: string): Date {
+export function fromDateKey(key: string): Date {
   const [year, month, day] = key.split('-').map(Number);
 
   return new Date(year, month - 1, day);

@@ -6,6 +6,8 @@ import {
   loadActivities,
   loadKeptActivityStats,
   loadReminderSettings,
+  loadStatsStart,
+  resetStats,
   loadWaterDays,
   loadWaterGlasses,
   saveActivity,
@@ -213,6 +215,35 @@ test('saves every reminder setting together', async () => {
     ['waterIntervalMinutes', 'null'],
   );
   expect(mockDatabase.runAsync).toHaveBeenCalledTimes(4);
+});
+
+test('resets the stats from today and frees their space', async () => {
+  // Kept totals and older water go together, then the file gets smaller.
+  mockDatabase.runAsync.mockClear();
+  mockDatabase.withTransactionAsync.mockClear();
+
+  await resetStats('2026-11-13');
+
+  expect(mockDatabase.withTransactionAsync).toHaveBeenCalledTimes(1);
+  expect(mockDatabase.runAsync).toHaveBeenCalledWith('DELETE FROM stats_totals');
+  expect(mockDatabase.runAsync).toHaveBeenCalledWith(
+    'DELETE FROM water_days WHERE date < ?',
+    ['2026-11-13'],
+  );
+  expect(mockDatabase.runAsync).toHaveBeenCalledWith(
+    'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
+    ['statsStart', '"2026-11-13"'],
+  );
+  expect(mockDatabase.execAsync).toHaveBeenLastCalledWith('VACUUM');
+});
+
+test('reads the day of the last reset, or none', async () => {
+  // Before any reset there is no row and every day counts.
+  mockDatabase.getFirstAsync.mockResolvedValueOnce({ value: '"2026-11-13"' });
+  expect(await loadStatsStart()).toBe('2026-11-13');
+
+  mockDatabase.getFirstAsync.mockResolvedValueOnce(null);
+  expect(await loadStatsStart()).toBeNull();
 });
 
 test('deletes an activity by id', async () => {

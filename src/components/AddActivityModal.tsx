@@ -22,6 +22,8 @@ import DateInput from './DateInput';
 import Logo from './Logo';
 import RepeatPicker from './RepeatPicker';
 
+const UNTITLED = 'Untitled activity';
+
 export type NewActivity = {
   title: string;
   start: Date;
@@ -101,8 +103,8 @@ export default function AddActivityModal({
   }
 
   function submit() {
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) return;
+    // A title is optional, so a quick activity needs only its time.
+    const trimmedTitle = title.trim() || UNTITLED;
 
     if (!date) {
       setHasDateError(true);
@@ -159,7 +161,7 @@ export default function AddActivityModal({
             autoFocus={!activityToEdit}
             onChangeText={setTitle}
             onSubmitEditing={() => startInputRef.current?.focus()}
-            placeholder="Activity title"
+            placeholder="Activity title (optional)"
             placeholderTextColor={colors.textSecondary}
             returnKeyType="next"
             style={styles.input}

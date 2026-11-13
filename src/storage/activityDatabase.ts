@@ -8,6 +8,7 @@ import { ActivityStats, NO_ACTIVITY_STATS, WaterDay } from '../stats/stats';
 import { ActivityRow, activityToRow, rowToActivity } from './activityRow';
 
 const ACTIVITY_STATS_NAMES = ['done', 'skipped', 'missed'] as const;
+const STATS_START = 'statsStart';
 
 let databasePromise: Promise<SQLiteDatabase> | null = null;
 
@@ -177,6 +178,35 @@ export async function loadKeptActivityStats(): Promise<ActivityStats> {
   }
 
   return stats;
+}
+
+// The day the stats were last reset, or null if they never were.
+export async function loadStatsStart(): Promise<string | null> {
+  const database = await getDatabase();
+  const row = await database.getFirstAsync<{ value: string }>(
+    'SELECT value FROM settings WHERE name = ?',
+    [STATS_START],
+  );
+
+  return row?.value ? JSON.parse(row.value) : null;
+}
+
+// Stats start again from today: water before today and the totals of deleted
+// activities go, and the activities themselves stay as they are.
+export async function resetStats(todayKey: string): Promise<void> {
+  const database = await getDatabase();
+
+  await database.withTransactionAsync(async () => {
+    await database.runAsync('DELETE FROM stats_totals');
+    await database.runAsync('DELETE FROM water_days WHERE date < ?', [todayKey]);
+    await database.runAsync(
+      'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
+      [STATS_START, JSON.stringify(todayKey)],
+    );
+  });
+
+  // SQLite keeps the freed space in its file until it is asked to give it back.
+  await database.execAsync('VACUUM');
 }
 
 // Settings never saved keep their default, so new ones need no migration.

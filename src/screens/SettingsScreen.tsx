@@ -14,6 +14,7 @@ import {
   CleanupPeriod,
   getCleanupCutoff,
   getOldActivities,
+  toDateKey,
 } from '../calendar/activities';
 import { formatTimeInput, formatTimeOfDay, parseTime } from '../calendar/time';
 import ChoiceChips from '../components/ChoiceChips';
@@ -28,6 +29,7 @@ import {
 import {
   getDatabaseSize,
   loadReminderSettings,
+  resetStats,
   saveReminderSettings,
 } from '../storage/activityDatabase';
 import { formatBytes } from '../storage/formatBytes';
@@ -83,6 +85,8 @@ export default function SettingsScreen({
   const [endText, setEndText] = useState('');
   const [status, setStatus] = useState<ReminderStatus | null>(null);
   const [isTestSent, setIsTestSent] = useState(false);
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [isReset, setIsReset] = useState(false);
 
   function loadStatus() {
     getReminderStatus().then(setStatus).catch(console.error);
@@ -313,6 +317,41 @@ export default function SettingsScreen({
       <Text style={styles.note}>
         Repeating activities are always kept. Delete them from their day.
       </Text>
+
+      <Text style={styles.sectionTitle}>Stats</Text>
+      <View style={styles.card}>
+        <Pressable
+          accessibilityLabel="Reset stats"
+          accessibilityRole="button"
+          onPress={() => setIsResetOpen(true)}
+          style={styles.row}
+        >
+          <Text style={styles.actionText}>Reset stats</Text>
+          {isReset && <Text style={styles.rowValue}>Reset today</Text>}
+        </Pressable>
+      </View>
+      <Text style={styles.note}>
+        Stats start again from today and the water history is deleted. Your
+        activities and the calendar stay as they are.
+      </Text>
+
+      {isResetOpen && (
+        <ConfirmModal
+          confirmLabel="Reset"
+          message="Water history and activity scores start again from today. This cannot be undone."
+          onClose={() => setIsResetOpen(false)}
+          onConfirm={() => {
+            setIsResetOpen(false);
+            resetStats(toDateKey(today))
+              .then(() => {
+                setIsReset(true);
+                return getDatabaseSize().then(setDatabaseSize);
+              })
+              .catch(console.error);
+          }}
+          title="Reset all stats?"
+        />
+      )}
 
       {activitiesToDelete && (
         <ConfirmModal

@@ -1,26 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import CalendarScreen from './src/screens/CalendarScreen';
-import LaunchScreen from './src/screens/LaunchScreen';
 import { colors } from './src/theme';
 
-const LAUNCH_SCREEN_DURATION = 1000;
-
+// The system splash screen covers the start, then the calendar shows at once.
 export default function App() {
-  const [isLaunching, setIsLaunching] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLaunching(false), LAUNCH_SCREEN_DURATION);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   // Every screen sits on the app background, down to behind the system bars.
   return (
     <View style={styles.root}>
       <CalendarScreen />
-      {isLaunching && <LaunchScreen />}
       <StatusBar style="auto" />
     </View>
   );
