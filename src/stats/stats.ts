@@ -51,29 +51,36 @@ export function addActivityStats(
   };
 }
 
-// Only days before today count, because today's activities can still be done.
+// Activities done today count at once. The others of today are not missed yet,
+// since there is still time to do them. Without `since`, every past day counts.
 export function getActivityStats(
   activities: Activity[],
   today: Date,
+  since?: Date,
 ): ActivityStats {
   const todayKey = toDateKey(today);
+  const sinceKey = since ? toDateKey(since) : '';
   const stats = { ...NO_ACTIVITY_STATS };
 
   for (const activity of activities) {
-    stats.skipped += activity.skippedDates.filter((key) => key < todayKey).length;
+    stats.skipped += activity.skippedDates.filter(
+      (key) => key < todayKey && key >= sinceKey,
+    ).length;
 
     const lastDay =
-      activity.repeatDays.length > 0 ? today : nextDay(activity.start);
+      activity.repeatDays.length > 0 ? nextDay(today) : nextDay(activity.start);
+    const startKey = toDateKey(activity.start);
+    const firstKey = sinceKey > startKey ? sinceKey : startKey;
 
     for (
-      let date = fromDateKey(toDateKey(activity.start));
-      toDateKey(date) < todayKey && date < lastDay;
+      let date = fromDateKey(firstKey);
+      toDateKey(date) <= todayKey && date < lastDay;
       date = nextDay(date)
     ) {
       if (!occursOn(activity, date)) continue;
 
       if (isCompletedOn(activity, date)) stats.done++;
-      else stats.missed++;
+      else if (toDateKey(date) < todayKey) stats.missed++;
     }
   }
 
@@ -122,6 +129,72 @@ export function getWaterStats(days: WaterDay[], today: Date): WaterStats {
   stats.currentStreak = streak;
 
   return stats;
+}
+
+// The first of the last `count` days, today included.
+export function getPeriodStart(today: Date, count: number): Date {
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate() - count + 1);
+}
+
+export type DayWater = {
+  date: Date;
+  // Null for a day with nothing recorded, apart from one recorded at zero.
+  millilitres: number | null;
+};
+
+export const RECENT_DAYS = 7;
+
+// The last days up to today, oldest first.
+export function getRecentWater(
+  days: WaterDay[],
+  today: Date,
+  count = RECENT_DAYS,
+): DayWater[] {
+  const glassesByDate = new Map(days.map(({ date, glasses }) => [date, glasses]));
+
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() - (count - 1 - index),
+    );
+
+    const glasses = glassesByDate.get(toDateKey(date));
+
+    return {
+      date,
+      millilitres: glasses === undefined ? null : glasses * GLASS_ML,
+    };
+  });
+}
+
+export type DayActivities = {
+  date: Date;
+  done: number;
+  // Activities planned that day, not counting cancelled days.
+  planned: number;
+};
+
+// The last days up to today, oldest first, with how many activities were done.
+export function getRecentActivities(
+  activities: Activity[],
+  today: Date,
+  count = RECENT_DAYS,
+): DayActivities[] {
+  return Array.from({ length: count }, (_, index) => {
+    const date = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() - (count - 1 - index),
+    );
+    const planned = activities.filter((activity) => occursOn(activity, date));
+
+    return {
+      date,
+      done: planned.filter((activity) => isCompletedOn(activity, date)).length,
+      planned: planned.length,
+    };
+  });
 }
 
 export function getScore(successes: number, total: number): number | null {

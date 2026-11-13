@@ -35,6 +35,22 @@ test('shows the current month', async () => {
   expect(screen.getByText('No upcoming activities')).toBeTruthy();
 });
 
+test('dims the days already past', async () => {
+  // Today is 2 November: the 1st is past, today and the 3rd are not.
+  const colorOf = (day: string) =>
+    StyleSheet.flatten(screen.getByText(day).props.style).color;
+  await render(<CalendarScreen today={today} />);
+
+  expect(colorOf('1')).toBe(colors.textSecondary);
+  expect(colorOf('3')).toBe(colors.text);
+
+  await fireEvent.press(screen.getByLabelText('Previous month'));
+  expect(colorOf('31')).toBe(colors.textSecondary);
+  await fireEvent.press(screen.getByLabelText('Next month'));
+  await fireEvent.press(screen.getByLabelText('Next month'));
+  expect(colorOf('1')).toBe(colors.text);
+});
+
 test('moves between months, across the year, and back to today', async () => {
   // The arrows cross the year correctly and My day leads back to the current month.
   await render(<CalendarScreen today={today} />);
@@ -378,15 +394,37 @@ test('opens the water screen from the bar and goes back', async () => {
 });
 
 test('opens the stats screen from the bar and goes back', async () => {
-  // The person icon leads to the scores, empty before anything is counted.
+  // The chart icon leads to the scores, which invite to start when empty.
   await render(<CalendarScreen today={today} />);
 
   await fireEvent.press(screen.getByLabelText('Stats'));
-  expect(await screen.findByText('done on their day')).toBeTruthy();
-  expect(screen.getAllByText('–')).toHaveLength(2);
+  expect(await screen.findByText('Nothing to rate yet')).toBeTruthy();
 
   await fireEvent.press(screen.getByLabelText('Back to calendar'));
   expect(screen.getByText('November')).toBeTruthy();
+});
+
+test('plans an activity from the empty next activity card', async () => {
+  // With nothing planned, the card opens the popup to add an activity.
+  await render(<CalendarScreen today={today} />);
+
+  await fireEvent.press(screen.getByLabelText('Plan an activity'));
+
+  expect(screen.getByText('New activity')).toBeTruthy();
+});
+
+test('starts tracking from the empty stats', async () => {
+  // The buttons of the empty cards open the water screen and the activity popup.
+  await render(<CalendarScreen today={today} />);
+
+  await fireEvent.press(screen.getByLabelText('Stats'));
+  await fireEvent.press(await screen.findByText('Add water'));
+  expect(await screen.findByText('0 L of 2 L')).toBeTruthy();
+
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  await fireEvent.press(screen.getByLabelText('Stats'));
+  await fireEvent.press(await screen.findByText('Plan an activity'));
+  expect(screen.getByText('New activity')).toBeTruthy();
 });
 
 test('adds an activity on a day chosen in the bar popup', async () => {

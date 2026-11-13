@@ -153,6 +153,14 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     return (
       <StatsScreen
         activities={activities}
+        onAddActivity={() => {
+          setIsStatsOpen(false);
+          setIsQuickAddOpen(true);
+        }}
+        onAddWater={() => {
+          setIsStatsOpen(false);
+          setIsWaterOpen(true);
+        }}
         onBack={() => setIsStatsOpen(false)}
         today={today}
       />
@@ -209,6 +217,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
       <View style={styles.nextActivity}>
         <NextActivityCard
           occurrence={getNextOccurrence(activities, today)}
+          onPlan={() => setIsQuickAddOpen(true)}
           onPress={(date) => openDay(date)}
         />
       </View>
@@ -234,7 +243,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
             },
             {
               label: 'Stats',
-              icon: 'person-outline',
+              icon: 'stats-chart-outline',
               onPress: () => setIsStatsOpen(true),
             },
             {

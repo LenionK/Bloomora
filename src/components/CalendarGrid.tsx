@@ -4,7 +4,7 @@ import { Activity, getDaysWithActivities } from '../calendar/activities';
 import { buildMonthGrid, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { colors } from '../theme';
 
-const CELL_HEIGHT = 56;
+const CELL_HEIGHT = 48;
 // The weekday row plus the 6 weeks of the longest months, so that what is below
 // the calendar stays in the same place in every month.
 const MAX_ROWS = 7;
@@ -21,6 +21,7 @@ type Props = {
 type DayCellProps = {
   day: number;
   isToday: boolean;
+  isPast: boolean;
   isSelected: boolean;
   hasActivities: boolean;
   onSelectDay: (day: number) => void;
@@ -30,6 +31,7 @@ type DayCellProps = {
 const DayCell = memo(function DayCell({
   day,
   isToday,
+  isPast,
   isSelected,
   hasActivities,
   onSelectDay,
@@ -48,7 +50,15 @@ const DayCell = memo(function DayCell({
     >
       {isSelected && isToday && <View style={styles.todaySelectedRing} />}
       <View>
-        <Text style={[styles.dayText, isToday && styles.todayText]}>{day}</Text>
+        <Text
+          style={[
+            styles.dayText,
+            isPast && styles.pastText,
+            isToday && styles.todayText,
+          ]}
+        >
+          {day}
+        </Text>
         {hasActivities && (
           <View
             style={[styles.activityDot, isToday && styles.todayDot]}
@@ -79,6 +89,12 @@ export default function CalendarGrid({
   );
   const isCurrentMonth =
     year === today.getFullYear() && month === today.getMonth();
+  // Past days are dimmed, so today and what is still ahead stand out.
+  const firstDayAhead = isCurrentMonth
+    ? today.getDate()
+    : new Date(year, month, 1) < today
+      ? Infinity
+      : 0;
 
   return (
     <View style={styles.grid}>
@@ -104,6 +120,7 @@ export default function CalendarGrid({
               <DayCell
                 day={day}
                 hasActivities={hasActivities}
+                isPast={day < firstDayAhead}
                 isSelected={isSelected}
                 isToday={isToday}
                 onSelectDay={onSelectDay}
@@ -149,6 +166,9 @@ const styles = StyleSheet.create({
   },
   dayText: {
     color: colors.text,
+  },
+  pastText: {
+    color: colors.textSecondary,
   },
   todayText: {
     fontWeight: 'bold',

@@ -2,20 +2,31 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Occurrence } from '../calendar/activities';
 import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { formatTime } from '../calendar/time';
-import { colors } from '../theme';
+import { cardShadow, colors } from '../theme';
 import Logo from './Logo';
 
 type Props = {
   occurrence: Occurrence | null;
   onPress: (date: Date) => void;
+  onPlan: () => void;
 };
 
-export default function NextActivityCard({ occurrence, onPress }: Props) {
+export default function NextActivityCard({ occurrence, onPress, onPlan }: Props) {
+  // With nothing planned, the card invites to plan instead of only saying so.
   if (!occurrence) {
     return (
-      <View style={[styles.card, styles.emptyCard]}>
-        <Text style={styles.emptyText}>No upcoming activities</Text>
-      </View>
+      <Pressable
+        accessibilityLabel="Plan an activity"
+        accessibilityRole="button"
+        onPress={onPlan}
+        style={[styles.card, styles.emptyCard]}
+      >
+        <Logo color={colors.surface} size={40} />
+        <View style={styles.details}>
+          <Text style={styles.emptyTitle}>No upcoming activities</Text>
+          <Text style={styles.emptyText}>Tap to plan your next one</Text>
+        </View>
+      </Pressable>
     );
   }
 
@@ -52,13 +63,19 @@ const styles = StyleSheet.create({
     minHeight: 96,
     padding: 16,
     borderRadius: 24,
+    ...cardShadow,
   },
   emptyCard: {
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primary,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.surface,
   },
   emptyText: {
-    color: colors.textSecondary,
+    marginTop: 2,
+    color: colors.surface,
   },
   details: {
     flex: 1,
