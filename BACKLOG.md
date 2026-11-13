@@ -13,6 +13,6 @@
 | US-9 | As a user, I want to open a day on a timeline, mark its activities as done and see my progress. | Done |
 | US-10 | As a user, I want to see the space used and delete old activities from the settings. | Done |
 | US-11 | As a user, I want to count the glasses of water I drink each day, 200 ml each, towards 2 litres. | Done |
-| US-12 | As a user, I want a notification before my activities, 10 minutes by default, with the time changeable in the settings. | To do |
-| US-13 | As a user, I want reminders to drink every 2 hours, stopping at 2 litres, with start, end and interval changeable in the settings. | To do |
+| US-12 | As a user, I want a notification before my activities, 10 minutes by default, with the time changeable in the settings. | Done |
+| US-13 | As a user, I want reminders to drink every 2 hours, stopping at 2 litres, with start, end and interval changeable in the settings. | Done |
 | US-14 | As a user, I want a stats screen with my water streak, my activities done, skipped and missed, and a score for each, kept even after deleting old activities. | Done |

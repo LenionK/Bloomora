@@ -12,6 +12,7 @@ import CalendarGrid from '../components/CalendarGrid';
 import CalendarHeader from '../components/CalendarHeader';
 import NextActivityCard from '../components/NextActivityCard';
 import ShortcutBar from '../components/ShortcutBar';
+import { refreshReminders } from '../notifications/scheduler';
 import {
   deleteActivities,
   deleteActivity,
@@ -40,10 +41,21 @@ export default function CalendarScreen({ today = new Date() }: Props) {
   const [isWaterOpen, setIsWaterOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    loadActivities().then(setActivities).catch(console.error);
+    loadActivities()
+      .then((saved) => {
+        setActivities(saved);
+        setIsLoaded(true);
+      })
+      .catch(console.error);
   }, []);
+
+  // Planning before loading would remove the reminders of saved activities.
+  useEffect(() => {
+    if (isLoaded) refreshReminders(activities);
+  }, [activities, isLoaded]);
 
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
@@ -131,6 +143,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         onDeleteOld={(oldActivities) => {
           deleteOldActivities(oldActivities).catch(console.error);
         }}
+        onRemindersChange={() => refreshReminders(activities)}
         today={today}
       />
     );
@@ -147,7 +160,13 @@ export default function CalendarScreen({ today = new Date() }: Props) {
   }
 
   if (isWaterOpen) {
-    return <WaterScreen onBack={() => setIsWaterOpen(false)} today={today} />;
+    return (
+      <WaterScreen
+        onBack={() => setIsWaterOpen(false)}
+        onGlassesChange={() => refreshReminders(activities)}
+        today={today}
+      />
+    );
   }
 
   if (isDayOpen) {

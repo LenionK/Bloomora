@@ -13,10 +13,15 @@ jest.mock('../src/storage/activityDatabase', () => ({
 const today = new Date(2026, 10, 13, 15, 30);
 const mockLoad = jest.mocked(loadWaterGlasses);
 const mockSave = jest.mocked(saveWaterGlasses);
+const onGlassesChange = jest.fn();
 
 async function renderWithGlasses(glasses: number) {
   mockLoad.mockResolvedValue(glasses);
-  await render(<WaterScreen onBack={jest.fn()} today={today} />);
+  await render(<WaterScreen
+      onBack={jest.fn()}
+      onGlassesChange={onGlassesChange}
+      today={today}
+    />);
 }
 
 function isDisabled(label: string) {
@@ -47,6 +52,17 @@ test('adds and removes a glass, saving each change', async () => {
   expect(mockSave).toHaveBeenLastCalledWith('2026-11-13', 3);
 });
 
+test('tells about each change once it is saved', async () => {
+  // The drink reminders are planned again only after the new count is stored.
+  onGlassesChange.mockClear();
+  await renderWithGlasses(3);
+  await screen.findByText('0.6 L of 2 L');
+
+  await fireEvent.press(screen.getByLabelText('Add a glass'));
+
+  expect(onGlassesChange).toHaveBeenCalledTimes(1);
+});
+
 test('cannot remove a glass when none was drunk', async () => {
   // The count never goes below zero.
   await renderWithGlasses(0);
@@ -72,7 +88,11 @@ test('celebrates the goal and keeps counting after it', async () => {
 test('waits for the saved count before allowing changes', async () => {
   // A tap before loading would save over the glasses already drunk today.
   mockLoad.mockReturnValue(new Promise(() => {}));
-  await render(<WaterScreen onBack={jest.fn()} today={today} />);
+  await render(<WaterScreen
+      onBack={jest.fn()}
+      onGlassesChange={onGlassesChange}
+      today={today}
+    />);
 
   expect(isDisabled('Add a glass')).toBe(true);
   expect(isDisabled('Remove a glass')).toBe(true);
