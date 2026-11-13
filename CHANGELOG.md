@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.0](https://github.com/LenionK/Bloomora/compare/v0.4.0...v0.5.0) (2026-11-13)
+
+
+### Features
+
+* redesign stats, water and calendar details ([#25](https://github.com/LenionK/Bloomora/issues/25)) ([b23a57f](https://github.com/LenionK/Bloomora/commit/b23a57f3e1980037d4d0d8666d733496d984b529))
+* **US-11:** track daily water with a filling bottle ([#21](https://github.com/LenionK/Bloomora/issues/21)) ([e7fbf5f](https://github.com/LenionK/Bloomora/commit/e7fbf5fb158b3c702b2a504dba129f8847349ec7))
+* **US-12, US-13:** remind of activities and of drinking water ([#24](https://github.com/LenionK/Bloomora/issues/24)) ([7bc71bd](https://github.com/LenionK/Bloomora/commit/7bc71bd324ab5872955be2b262a2ff99eaffd56f))
+* **US-14:** show stats and scores for activities and water ([#23](https://github.com/LenionK/Bloomora/issues/23)) ([d33efce](https://github.com/LenionK/Bloomora/commit/d33efcecc8f9b94e47ca8f0d83ea35e85a50b580))
+
 ## [0.4.0](https://github.com/LenionK/Bloomora/compare/v0.3.0...v0.4.0) (2026-11-03)
 
 
