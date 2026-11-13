@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { colors } from '../theme';
+import { cardShadow, colors } from '../theme';
 
 type Shortcut = {
   label: string;
@@ -43,6 +43,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderRadius: 24,
     backgroundColor: colors.surface,
+    ...cardShadow,
   },
   shortcut: {
     flex: 1,

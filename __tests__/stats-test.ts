@@ -2,6 +2,9 @@ import { Activity } from '../src/calendar/activities';
 import {
   addActivityStats,
   getActivityStats,
+  getPeriodStart,
+  getRecentActivities,
+  getRecentWater,
   getScore,
   getWaterStats,
 } from '../src/stats/stats';
@@ -35,8 +38,32 @@ test('counts a past one-time activity as done or missed', () => {
   });
 });
 
-test('does not count today or the future yet', () => {
-  // Today's activities can still be done, and future ones are not due.
+test('counts an activity done today at once', () => {
+  // Done is done, even before the day is over.
+  const doneToday = activity({
+    start: new Date(2026, 10, 16, 9, 0),
+    end: new Date(2026, 10, 16, 10, 0),
+    completedDates: ['2026-11-16'],
+  });
+  const mondays = activity({
+    repeatDays: [0],
+    completedDates: ['2026-11-02', '2026-11-16'],
+  });
+
+  expect(getActivityStats([doneToday], today)).toEqual({
+    done: 1,
+    skipped: 0,
+    missed: 0,
+  });
+  expect(getActivityStats([mondays], today)).toEqual({
+    done: 2,
+    skipped: 0,
+    missed: 1,
+  });
+});
+
+test('does not count today as missed, nor the future', () => {
+  // Today's activities not done yet can still be done, and future ones are not due.
   const todayActivity = activity({
     start: new Date(2026, 10, 16, 9, 0),
     end: new Date(2026, 10, 16, 10, 0),
@@ -65,6 +92,20 @@ test('counts each past day of a repeating activity', () => {
     skipped: 0,
     missed: 1,
   });
+});
+
+test('counts only the days from the start of a period', () => {
+  // From 9 November: the 2nd is left out, the 9th is missed, the 16th is today.
+  const mondays = activity({
+    repeatDays: [0],
+    completedDates: ['2026-11-02'],
+    skippedDates: ['2026-11-02'],
+  });
+
+  expect(
+    getActivityStats([mondays], today, getPeriodStart(today, 8)),
+  ).toEqual({ done: 0, skipped: 0, missed: 1 });
+  expect(getPeriodStart(today, 7)).toEqual(new Date(2026, 10, 10));
 });
 
 test('counts skipped days apart, without making them missed', () => {
@@ -151,6 +192,43 @@ test('ends the current streak after a day below the goal', () => {
 
   expect(stats.currentStreak).toBe(0);
   expect(stats.bestStreak).toBe(3);
+});
+
+test('lists the water of the last 7 days, oldest first', () => {
+  // Days without a row were not tracked, unlike a day recorded at zero.
+  const recent = getRecentWater(
+    [
+      { date: '2026-11-10', glasses: 10 },
+      { date: '2026-11-12', glasses: 0 },
+      { date: '2026-11-16', glasses: 4 },
+      { date: '2026-11-01', glasses: 10 },
+    ],
+    today,
+  );
+
+  expect(recent.map(({ date }) => date.getDate())).toEqual([
+    10, 11, 12, 13, 14, 15, 16,
+  ]);
+  expect(recent.map(({ millilitres }) => millilitres)).toEqual([
+    2000, null, 0, null, null, null, 800,
+  ]);
+});
+
+test('lists the activities planned and done in the last days', () => {
+  // A cancelled day is not planned, and today counts what is done so far.
+  const mondays = activity({
+    repeatDays: [0],
+    completedDates: ['2026-11-16'],
+    skippedDates: ['2026-11-09'],
+  });
+
+  const recent = getRecentActivities([mondays], today);
+
+  expect(recent.map(({ date }) => date.getDate())).toEqual([
+    10, 11, 12, 13, 14, 15, 16,
+  ]);
+  expect(recent[6]).toEqual(expect.objectContaining({ done: 1, planned: 1 }));
+  expect(recent.slice(0, 6).every(({ planned }) => planned === 0)).toBe(true);
 });
 
 test('has no water stats before the first glass', () => {
