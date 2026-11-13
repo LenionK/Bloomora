@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/LenionK/Bloomora/compare/v0.5.0...v0.6.0) (2026-11-13)
+
+
+### Features
+
+* reset stats, optional titles and a release build plugin ([#26](https://github.com/LenionK/Bloomora/issues/26)) ([ed548a1](https://github.com/LenionK/Bloomora/commit/ed548a11a4e1cb10ebd0f3dd90a1a9ba1a0a8425))
+
+
+### Bug Fixes
+
+* ship the Nunito font and keep clear of Android's navigation bar ([#28](https://github.com/LenionK/Bloomora/issues/28)) ([cea870d](https://github.com/LenionK/Bloomora/commit/cea870db3c165adadd94eb8cdf67d3457c305f62))
+
 ## [0.5.0](https://github.com/LenionK/Bloomora/compare/v0.4.0...v0.5.0) (2026-11-13)
 
 
