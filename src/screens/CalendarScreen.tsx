@@ -1,5 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Activity,
   getNextOccurrence,
@@ -31,6 +32,7 @@ type Props = {
 };
 
 export default function CalendarScreen({ today = new Date() }: Props) {
+  const insets = useSafeAreaInsets();
   const [visibleMonth, setVisibleMonth] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
   );
@@ -222,7 +224,13 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         />
       </View>
 
-      <View style={styles.shortcuts}>
+      {/* Above the phone's own navigation, whether buttons or a gesture bar. */}
+      <View
+        style={[
+          styles.shortcuts,
+          { marginBottom: Math.max(24, insets.bottom + 12) },
+        ]}
+      >
         <ShortcutBar
           shortcuts={[
             {

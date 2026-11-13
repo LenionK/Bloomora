@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import { Occurrence } from '../calendar/activities';
 import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { formatTime } from '../calendar/time';

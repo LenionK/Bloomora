@@ -4,9 +4,10 @@ import {
   BackHandler,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '../components/AppText';
 import {
   Activity,
   getActivitiesForDate,
@@ -22,6 +23,8 @@ import ProgressRing from '../components/ProgressRing';
 import { colors } from '../theme';
 
 const DEFAULT_FIRST_HOUR = 8;
+// Above the phone's own navigation, whether buttons or a gesture bar.
+const ADD_BUTTON_BOTTOM = 30;
 const ARROW_SIZE = 44;
 const ARROW_GAP = 8;
 
@@ -50,6 +53,7 @@ export default function DayScreen({
   onDelete,
   onSkipDates,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
   const [activityToDelete, setActivityToDelete] = useState<Activity | null>(
@@ -159,7 +163,7 @@ export default function DayScreen({
         accessibilityLabel="Add activity"
         accessibilityRole="button"
         onPress={() => setIsAddOpen(true)}
-        style={styles.addButton}
+        style={[styles.addButton, { bottom: ADD_BUTTON_BOTTOM + insets.bottom }]}
       >
         <Ionicons name="add" size={28} color={colors.surface} />
       </Pressable>
@@ -273,7 +277,7 @@ const styles = StyleSheet.create({
   addButton: {
     position: 'absolute',
     right: 14,
-    bottom: 30,
+    bottom: ADD_BUTTON_BOTTOM,
     width: 60,
     height: 60,
     borderRadius: 30,

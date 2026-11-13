@@ -5,9 +5,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '../components/AppText';
 import { Activity, toDateKey } from '../calendar/activities';
 import ActivityBreakdown from '../components/ActivityBreakdown';
 import ActivityChart from '../components/ActivityChart';
@@ -98,6 +99,7 @@ export default function StatsScreen({
   onAddActivity,
   onAddWater,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [keptStats, setKeptStats] = useState<ActivityStats | null>(null);
   const [waterDays, setWaterDays] = useState<WaterDay[] | null>(null);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
@@ -131,7 +133,10 @@ export default function StatsScreen({
 
   return (
     <ScrollView
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: 24 + insets.bottom },
+      ]}
       style={styles.container}
     >
       <ScreenHeader

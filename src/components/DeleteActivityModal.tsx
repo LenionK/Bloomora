@@ -1,6 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { Text } from './AppText';
 import { Activity, getUpcomingDates, toDateKey } from '../calendar/activities';
 import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
 import { colors } from '../theme';
