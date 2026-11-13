@@ -1,5 +1,9 @@
 import { openDatabaseAsync, SQLiteDatabase } from 'expo-sqlite';
 import { Activity } from '../calendar/activities';
+import {
+  DEFAULT_REMINDER_SETTINGS,
+  ReminderSettings,
+} from '../notifications/reminders';
 import { ActivityStats, NO_ACTIVITY_STATS, WaterDay } from '../stats/stats';
 import { ActivityRow, activityToRow, rowToActivity } from './activityRow';
 
@@ -27,6 +31,10 @@ async function openAndPrepare(): Promise<SQLiteDatabase> {
     CREATE TABLE IF NOT EXISTS stats_totals (
       name TEXT PRIMARY KEY NOT NULL,
       value INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS settings (
+      name TEXT PRIMARY KEY NOT NULL,
+      value TEXT NOT NULL
     );
   `);
 
@@ -169,6 +177,38 @@ export async function loadKeptActivityStats(): Promise<ActivityStats> {
   }
 
   return stats;
+}
+
+// Settings never saved keep their default, so new ones need no migration.
+export async function loadReminderSettings(): Promise<ReminderSettings> {
+  const database = await getDatabase();
+  const rows = await database.getAllAsync<{ name: string; value: string }>(
+    'SELECT name, value FROM settings',
+  );
+  const settings = { ...DEFAULT_REMINDER_SETTINGS };
+
+  for (const { name, value } of rows) {
+    if (name in settings) {
+      Object.assign(settings, { [name]: JSON.parse(value) });
+    }
+  }
+
+  return settings;
+}
+
+export async function saveReminderSettings(
+  settings: ReminderSettings,
+): Promise<void> {
+  const database = await getDatabase();
+
+  await database.withTransactionAsync(async () => {
+    for (const [name, value] of Object.entries(settings)) {
+      await database.runAsync(
+        'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
+        [name, JSON.stringify(value)],
+      );
+    }
+  });
 }
 
 export async function getDatabaseSize(): Promise<number> {

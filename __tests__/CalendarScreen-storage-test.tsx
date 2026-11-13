@@ -11,6 +11,12 @@ jest.mock('../src/storage/activityDatabase', () => ({
   loadActivities: jest.fn(),
   saveActivity: jest.fn(async () => {}),
   deleteActivity: jest.fn(async () => {}),
+  loadReminderSettings: jest.fn(
+    async () =>
+      jest.requireActual('../src/notifications/reminders')
+        .DEFAULT_REMINDER_SETTINGS,
+  ),
+  loadWaterGlasses: jest.fn(async () => 0),
 }));
 
 const today = new Date(2026, 10, 2);

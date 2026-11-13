@@ -26,9 +26,10 @@ const BOTTLE_HEIGHT = 280;
 type Props = {
   today: Date;
   onBack: () => void;
+  onGlassesChange: () => void;
 };
 
-export default function WaterScreen({ today, onBack }: Props) {
+export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
   // Null until the saved count arrives, so an early tap cannot overwrite it.
   const [glasses, setGlasses] = useState<number | null>(null);
   const dateKey = toDateKey(today);
@@ -53,7 +54,9 @@ export default function WaterScreen({ today, onBack }: Props) {
 
   function changeGlasses(newGlasses: number) {
     setGlasses(newGlasses);
-    saveWaterGlasses(dateKey, newGlasses).catch(console.error);
+    saveWaterGlasses(dateKey, newGlasses)
+      .then(onGlassesChange)
+      .catch(console.error);
   }
 
   return (

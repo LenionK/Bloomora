@@ -27,6 +27,13 @@
       "expo-asset",
       "expo-sqlite",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#B5305E"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#F6F5F3",

@@ -5,9 +5,11 @@ import {
   getDatabaseSize,
   loadActivities,
   loadKeptActivityStats,
+  loadReminderSettings,
   loadWaterDays,
   loadWaterGlasses,
   saveActivity,
+  saveReminderSettings,
   saveWaterGlasses,
 } from '../src/storage/activityDatabase';
 import { activityToRow } from '../src/storage/activityRow';
@@ -152,6 +154,7 @@ test('creates the water table with the activities one', async () => {
 
   expect(queries).toContain('CREATE TABLE IF NOT EXISTS water_days');
   expect(queries).toContain('CREATE TABLE IF NOT EXISTS stats_totals');
+  expect(queries).toContain('CREATE TABLE IF NOT EXISTS settings');
 });
 
 test('reads the glasses of a day, starting from zero', async () => {
@@ -175,6 +178,41 @@ test('saves the glasses of a day', async () => {
     'INSERT OR REPLACE INTO water_days (date, glasses) VALUES (?, ?)',
     ['2026-11-13', 5],
   );
+});
+
+test('reads the reminder settings, keeping defaults for those never saved', async () => {
+  // Only what was changed is in the table; the rest uses the defaults.
+  mockDatabase.getAllAsync.mockResolvedValueOnce([
+    { name: 'activityLeadMinutes', value: 'null' },
+    { name: 'waterIntervalMinutes', value: '60' },
+  ]);
+
+  expect(await loadReminderSettings()).toEqual({
+    activityLeadMinutes: null,
+    waterIntervalMinutes: 60,
+    waterStartMinutes: 540,
+    waterEndMinutes: 1260,
+  });
+});
+
+test('saves every reminder setting together', async () => {
+  // One transaction, so a half saved change cannot happen.
+  mockDatabase.runAsync.mockClear();
+  mockDatabase.withTransactionAsync.mockClear();
+
+  await saveReminderSettings({
+    activityLeadMinutes: 30,
+    waterIntervalMinutes: null,
+    waterStartMinutes: 600,
+    waterEndMinutes: 1200,
+  });
+
+  expect(mockDatabase.withTransactionAsync).toHaveBeenCalledTimes(1);
+  expect(mockDatabase.runAsync).toHaveBeenCalledWith(
+    'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
+    ['waterIntervalMinutes', 'null'],
+  );
+  expect(mockDatabase.runAsync).toHaveBeenCalledTimes(4);
 });
 
 test('deletes an activity by id', async () => {
