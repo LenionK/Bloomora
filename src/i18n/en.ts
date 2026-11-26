@@ -16,6 +16,16 @@ const MONTHS = [
   'December',
 ];
 
+const WEEKDAYS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];
+
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
@@ -28,15 +38,7 @@ export const en = {
     monthsInDate: MONTHS,
     monthsShort: MONTHS.map((month) => month.slice(0, 3)),
     weekdaysShort: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    weekdays: [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ],
+    weekdays: WEEKDAYS,
   },
 
   colorNames: {
@@ -66,7 +68,15 @@ export const en = {
   },
 
   calendar: {
-    hasActivities: 'Has activities',
+    // "Monday 2 November, today, has activities".
+    dayLabel: (date: Date, isToday: boolean, hasActivities: boolean) =>
+      [
+        `${WEEKDAYS[(date.getDay() + 6) % 7]} ${date.getDate()} ${MONTHS[date.getMonth()]}`,
+        isToday && 'today',
+        hasActivities && 'has activities',
+      ]
+        .filter(Boolean)
+        .join(', '),
     previousMonth: 'Previous month',
     nextMonth: 'Next month',
   },
@@ -102,9 +112,11 @@ export const en = {
     dateError: (date: Date) =>
       `Enter a valid date from ${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`,
     titleLabel: 'Activity title',
-    titlePlaceholder: 'Activity title (optional)',
+    titleField: 'Title (optional)',
+    titlePlaceholder: 'Title',
     descriptionLabel: 'Activity description',
-    descriptionPlaceholder: 'Description (optional)',
+    descriptionField: 'Description (optional)',
+    descriptionPlaceholder: 'Description',
     start: 'Start',
     startLabel: 'Start time',
     end: 'End',
@@ -128,6 +140,7 @@ export const en = {
       someDays: 'Some days',
       all: 'Delete all',
     },
+    noDaysError: 'Choose at least one day to delete.',
   },
 
   water: {
@@ -194,7 +207,6 @@ export const en = {
 
   settings: {
     title: 'Settings',
-    calendar: 'Calendar',
 
     language: 'Language',
     languageOptions: {
@@ -214,6 +226,8 @@ export const en = {
     to: 'to',
     drinkFrom: 'Drink reminders from',
     drinkTo: 'Drink reminders to',
+    hoursError:
+      'The end must be later than the start, so the saved hours are back. Enter new ones to change them.',
     notAllowed:
       'Notifications are not allowed. Allow them for this app in the phone settings.',
     plannedReminders: 'Planned reminders',
@@ -226,8 +240,10 @@ export const en = {
     importButton: 'Import from an .ics file',
     importNote:
       'Events from today on are added. Repeats that end, skip weeks or go by month or year become single dates for the next 3 months. All-day events are placed at 9:00–9:30.',
-    importUnreadable: 'The file could not be read',
-    importNotCalendar: 'Not an .ics calendar file',
+    importUnreadable:
+      'The file could not be opened, so nothing was imported. Try again, or save the file on the phone first.',
+    importNotCalendar:
+      'This file is not an .ics calendar, so nothing was imported. Choose a file exported from a calendar app.',
     importNothingNew: 'Nothing new to import.',
     importMessage: 'They are added to your calendar in pink.',
     // What the file holds that will not be added, after a space.
@@ -253,11 +269,11 @@ export const en = {
     activities: 'Activities',
     saved: (count: number) => `${count} saved`,
 
-    deleteOld: 'Delete old activities',
+    deleteOld: 'Old activities',
     olderThan: {
-      week: 'Older than a week',
-      month: 'Older than a month',
-      year: 'Older than a year',
+      week: 'Delete activities older than a week',
+      month: 'Delete activities older than a month',
+      year: 'Delete activities older than a year',
     },
     deleteOldNote: 'Repeating activities are always kept. Delete them from their day.',
     deleteOldTitle: (count: number) =>

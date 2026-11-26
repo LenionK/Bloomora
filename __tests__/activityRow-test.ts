@@ -33,3 +33,10 @@ test('saves an empty description for an activity without one', () => {
   expect(description).toBe('Leg day');
   expect(activityToRow(withoutDescription).description).toBe('');
 });
+
+test('shows an activity saved in the old orange in the new one', () => {
+  // The orange was made darker for readability, and saved activities follow it.
+  const row = { ...activityToRow(activity), color: '#C2570C' };
+
+  expect(rowToActivity(row).color).toBe('#B9520B');
+});

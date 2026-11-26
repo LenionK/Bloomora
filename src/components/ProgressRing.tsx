@@ -32,7 +32,7 @@ export default function ProgressRing({ completed, total }: Props) {
       style={styles.ring}
     >
       <Svg height={SIZE} width={SIZE}>
-        <Circle {...arc} stroke={colors.primarySoft} />
+        <Circle {...arc} stroke={colors.primaryContainer} />
         {completed > 0 && (
           <Circle
             {...arc}

@@ -1,9 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Pressable from './Pressable';
 import { Text } from './AppText';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, fontSizes } from '../theme';
 import Logo from './Logo';
+
+// The arrows look 40 points wide, and take taps across 48.
+const ARROW_TAP_SPACE = 4;
 
 type Props = {
   year: number;
@@ -31,23 +35,27 @@ export default function CalendarHeader({
 
       <Text style={styles.year}>{year}</Text>
       <View style={styles.monthRow}>
-        <Text style={styles.month}>{t.dates.months[month]}</Text>
+        <Text accessibilityRole="header" style={styles.month}>
+          {t.dates.months[month]}
+        </Text>
         <View style={styles.arrows}>
           <Pressable
             accessibilityLabel={t.calendar.previousMonth}
             accessibilityRole="button"
+            hitSlop={ARROW_TAP_SPACE}
             onPress={onPreviousMonth}
             style={styles.arrowButton}
           >
-            <Ionicons name="chevron-back" size={24} color={colors.surface} />
+            <Ionicons name="chevron-back" size={24} color={colors.onColor} />
           </Pressable>
           <Pressable
             accessibilityLabel={t.calendar.nextMonth}
             accessibilityRole="button"
+            hitSlop={ARROW_TAP_SPACE}
             onPress={onNextMonth}
             style={styles.arrowButton}
           >
-            <Ionicons name="chevron-forward" size={24} color={colors.surface} />
+            <Ionicons name="chevron-forward" size={24} color={colors.onColor} />
           </Pressable>
         </View>
       </View>
@@ -67,7 +75,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logo: {
-    fontSize: 20,
+    fontSize: fontSizes.title,
     fontWeight: 'bold',
     color: colors.text,
   },
@@ -82,7 +90,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   month: {
-    fontSize: 40,
+    fontSize: fontSizes.display,
     lineHeight: 44,
     includeFontPadding: false,
     fontWeight: 'bold',

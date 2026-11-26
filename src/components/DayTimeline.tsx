@@ -11,7 +11,7 @@ import {
   layoutDay,
 } from '../calendar/dayLayout';
 import { formatDuration } from '../calendar/time';
-import { colors } from '../theme';
+import { colors, fontSizes } from '../theme';
 import ActivityCard from './ActivityCard';
 import GapLine from './GapLine';
 
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   timeMark: {
     position: 'absolute',
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     lineHeight: TIME_LABEL_HEIGHT,
     color: colors.textSecondary,
   },
@@ -168,19 +168,19 @@ const styles = StyleSheet.create({
   },
   gapLabel: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderWidth: 1,
     borderRadius: 11,
     borderColor: colors.text,
     backgroundColor: colors.background,
   },
   gapText: {
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     lineHeight: 16,
     color: colors.textSecondary,
   },
   cardSlot: {
     position: 'absolute',
-    paddingHorizontal: 2,
+    paddingHorizontal: 4,
   },
 });

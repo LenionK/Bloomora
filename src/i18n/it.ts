@@ -17,6 +17,16 @@ const MONTHS_IN_DATE = [
   'dicembre',
 ];
 
+const WEEKDAYS = [
+  'Lunedì',
+  'Martedì',
+  'Mercoledì',
+  'Giovedì',
+  'Venerdì',
+  'Sabato',
+  'Domenica',
+];
+
 function capitalize(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
@@ -34,15 +44,7 @@ export const it: Strings = {
     monthsInDate: MONTHS_IN_DATE,
     monthsShort: MONTHS_IN_DATE.map((month) => month.slice(0, 3)),
     weekdaysShort: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'],
-    weekdays: [
-      'Lunedì',
-      'Martedì',
-      'Mercoledì',
-      'Giovedì',
-      'Venerdì',
-      'Sabato',
-      'Domenica',
-    ],
+    weekdays: WEEKDAYS,
   },
 
   colorNames: {
@@ -72,7 +74,14 @@ export const it: Strings = {
   },
 
   calendar: {
-    hasActivities: 'Ha attività',
+    dayLabel: (date: Date, isToday: boolean, hasActivities: boolean) =>
+      [
+        `${WEEKDAYS[(date.getDay() + 6) % 7]} ${date.getDate()} ${MONTHS_IN_DATE[date.getMonth()]}`,
+        isToday && 'oggi',
+        hasActivities && 'con attività',
+      ]
+        .filter(Boolean)
+        .join(', '),
     previousMonth: 'Mese precedente',
     nextMonth: 'Mese successivo',
   },
@@ -108,9 +117,11 @@ export const it: Strings = {
     dateError: (date: Date) =>
       `Inserisci una data valida dal ${date.getDate()} ${MONTHS_IN_DATE[date.getMonth()]} ${date.getFullYear()}`,
     titleLabel: 'Titolo attività',
-    titlePlaceholder: 'Titolo (facoltativo)',
+    titleField: 'Titolo (facoltativo)',
+    titlePlaceholder: 'Titolo',
     descriptionLabel: 'Descrizione attività',
-    descriptionPlaceholder: 'Descrizione (facoltativa)',
+    descriptionField: 'Descrizione (facoltativa)',
+    descriptionPlaceholder: 'Descrizione',
     start: 'Inizio',
     startLabel: 'Ora di inizio',
     end: 'Fine',
@@ -134,6 +145,7 @@ export const it: Strings = {
       someDays: 'Alcuni giorni',
       all: 'Elimina tutte',
     },
+    noDaysError: 'Scegli almeno un giorno da eliminare.',
   },
 
   water: {
@@ -200,7 +212,6 @@ export const it: Strings = {
 
   settings: {
     title: 'Impostazioni',
-    calendar: 'Calendario',
 
     language: 'Lingua',
     languageOptions: {
@@ -220,6 +231,8 @@ export const it: Strings = {
     to: 'alle',
     drinkFrom: 'Promemoria per bere dalle',
     drinkTo: 'Promemoria per bere fino alle',
+    hoursError:
+      "La fine deve venire dopo l'inizio, quindi tornano gli orari salvati. Inserisci quelli nuovi per cambiarli.",
     notAllowed:
       'Le notifiche non sono consentite. Consentile per questa app nelle impostazioni del telefono.',
     plannedReminders: 'Promemoria programmati',
@@ -232,8 +245,10 @@ export const it: Strings = {
     importButton: 'Importa da un file .ics',
     importNote:
       'Vengono aggiunti gli eventi da oggi in poi. Le ripetizioni che finiscono, saltano delle settimane o vanno per mese o anno diventano date singole per i prossimi 3 mesi. Gli eventi di tutto il giorno vanno alle 9:00–9:30.',
-    importUnreadable: 'Non è stato possibile leggere il file',
-    importNotCalendar: 'Non è un file di calendario .ics',
+    importUnreadable:
+      'Non è stato possibile aprire il file, quindi non è stato importato nulla. Riprova, o salva prima il file sul telefono.',
+    importNotCalendar:
+      "Questo file non è un calendario .ics, quindi non è stato importato nulla. Scegli un file esportato da un'app di calendario.",
     importNothingNew: 'Niente di nuovo da importare.',
     importMessage: 'Vengono aggiunte al calendario in rosa.',
     importLeftOut: (past: number, duplicates: number, unsupported: number) => {
@@ -256,11 +271,11 @@ export const it: Strings = {
     activities: 'Attività',
     saved: (count: number) => `${count} ${count === 1 ? 'salvata' : 'salvate'}`,
 
-    deleteOld: 'Elimina le attività vecchie',
+    deleteOld: 'Attività vecchie',
     olderThan: {
-      week: 'Più vecchie di una settimana',
-      month: 'Più vecchie di un mese',
-      year: 'Più vecchie di un anno',
+      week: 'Elimina quelle di oltre una settimana fa',
+      month: 'Elimina quelle di oltre un mese fa',
+      year: 'Elimina quelle di oltre un anno fa',
     },
     deleteOldNote: 'Le attività ripetute restano sempre. Eliminale dal loro giorno.',
     deleteOldTitle: (count: number) =>

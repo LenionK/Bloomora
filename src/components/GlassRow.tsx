@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Animated,
   Easing,
-  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
+import Pressable from './Pressable';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
+import { useReducedMotion } from './useReducedMotion';
 import { DAILY_GOAL_ML, GLASS_ML } from '../water/water';
 
 const GOAL_GLASSES = DAILY_GOAL_ML / GLASS_ML;
@@ -58,7 +59,7 @@ function Glass({ isFull, waveShift }: GlassProps) {
       >
         <Path
           d={GLASS_PATH}
-          fill={colors.waterSoft}
+          fill={colors.waterContainer}
           stroke={colors.waterMuted}
           strokeLinejoin="round"
           strokeWidth={2.5}
@@ -83,7 +84,7 @@ function Glass({ isFull, waveShift }: GlassProps) {
         viewBox={`0 0 ${GLASS_WIDTH} ${GLASS_HEIGHT}`}
         width={GLASS_WIDTH}
       >
-        <Path d={GLASS_PATH} fill={colors.waterSoft} />
+        <Path d={GLASS_PATH} fill={colors.waterContainer} />
       </Svg>
       <Animated.View
         style={[styles.water, { transform: [{ translateX: waveShift }] }]}
@@ -104,7 +105,7 @@ function Glass({ isFull, waveShift }: GlassProps) {
       >
         <Path d={OUTSIDE_PATH} fill={colors.background} fillRule="evenodd" />
         <Rect
-          fill={colors.surface}
+          fill={colors.onColor}
           height={18}
           opacity={0.4}
           rx={1.5}
@@ -129,8 +130,11 @@ function Glass({ isFull, waveShift }: GlassProps) {
 export default function GlassRow({ glasses, isDisabled, onAdd, onRemove }: Props) {
   const t = useStrings();
   const [wave] = useState(() => new Animated.Value(0));
+  const isMotionReduced = useReducedMotion();
 
+  // An ambient loop, still when the phone asks for less motion.
   useEffect(() => {
+    if (isMotionReduced) return;
     const loop = Animated.loop(
       Animated.timing(wave, {
         toValue: 1,
@@ -142,7 +146,7 @@ export default function GlassRow({ glasses, isDisabled, onAdd, onRemove }: Props
 
     loop.start();
     return () => loop.stop();
-  }, [wave]);
+  }, [isMotionReduced, wave]);
 
   // Each glass starts at another point of the wave, so they do not move in step.
   const waveShifts = useMemo(

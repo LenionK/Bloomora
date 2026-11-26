@@ -12,18 +12,21 @@ import {
   toDateInputs,
 } from '../calendar/dateInput';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, fontSizes } from '../theme';
 
 type Props = {
   initialDate: Date;
   firstDate: Date;
   onChange: (date: Date | null) => void;
+  // Called when any of the three fields is left, to check the date.
+  onBlur?: () => void;
 };
 
 export default memo(function DateInput({
   initialDate,
   firstDate,
   onChange,
+  onBlur,
 }: Props) {
   const t = useStrings();
   const [inputs, setInputs] = useState(toDateInputs(initialDate));
@@ -43,9 +46,10 @@ export default memo(function DateInput({
         <TextInput
           accessibilityLabel={t.dateInput.day}
           keyboardType="number-pad"
-          onBlur={() =>
-            setInputs({ ...inputs, day: completeTwoDigitInput(inputs.day) })
-          }
+          onBlur={() => {
+            setInputs({ ...inputs, day: completeTwoDigitInput(inputs.day) });
+            onBlur?.();
+          }}
           onChangeText={(text) => changeInputs({ day: formatDayInput(text) })}
           returnKeyType="done"
           selectTextOnFocus
@@ -58,9 +62,10 @@ export default memo(function DateInput({
         <TextInput
           accessibilityLabel={t.dateInput.month}
           keyboardType="number-pad"
-          onBlur={() =>
-            setInputs({ ...inputs, month: completeTwoDigitInput(inputs.month) })
-          }
+          onBlur={() => {
+            setInputs({ ...inputs, month: completeTwoDigitInput(inputs.month) });
+            onBlur?.();
+          }}
           onChangeText={(text) =>
             changeInputs({ month: formatMonthInput(text) })
           }
@@ -75,6 +80,7 @@ export default memo(function DateInput({
         <TextInput
           accessibilityLabel={t.dateInput.year}
           keyboardType="number-pad"
+          onBlur={onBlur}
           onChangeText={(text) => changeInputs({ year: formatYearInput(text) })}
           returnKeyType="done"
           selectTextOnFocus
@@ -100,12 +106,12 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: 4,
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     textAlign: 'center',
     color: colors.textSecondary,
   },
   input: {
-    height: 44,
+    minHeight: 44,
     paddingHorizontal: 8,
     borderRadius: 22,
     textAlign: 'center',

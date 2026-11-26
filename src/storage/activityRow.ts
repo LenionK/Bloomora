@@ -1,4 +1,5 @@
 import { Activity } from '../calendar/activities';
+import { replacedColors } from '../theme';
 
 export type ActivityRow = {
   id: string;
@@ -32,7 +33,8 @@ export function rowToActivity(row: ActivityRow): Activity {
     title: row.title,
     start: new Date(row.start_at),
     end: new Date(row.end_at),
-    color: row.color,
+    // An activity saved with an old colour shows the colour that replaced it.
+    color: replacedColors[row.color] ?? row.color,
     repeatDays: JSON.parse(row.repeat_days),
     completedDates: JSON.parse(row.completed_dates),
     skippedDates: JSON.parse(row.skipped_dates),

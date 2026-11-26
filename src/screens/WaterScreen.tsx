@@ -1,26 +1,29 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  AccessibilityInfo,
   Animated,
+  Easing,
   BackHandler,
-  Pressable,
   StyleSheet,
   useWindowDimensions,
   Vibration,
   View,
 } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../components/AppText';
 import { toDateKey } from '../calendar/activities';
 import Confetti from '../components/Confetti';
 import GlassRow from '../components/GlassRow';
 import ScreenHeader from '../components/ScreenHeader';
+import { useReducedMotion } from '../components/useReducedMotion';
 import WaterBottle from '../components/WaterBottle';
 import {
   loadWaterGlasses,
   saveWaterGlasses,
 } from '../storage/activityDatabase';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, durations, fontSizes, radii, SCREEN_TOP } from '../theme';
 import {
   DAILY_GOAL_ML,
   formatLitres,
@@ -41,6 +44,8 @@ const MIN_BOTTLE_SIZE = 220;
 const MAX_BOTTLE_SIZE = 340;
 const SIDE_MARGIN = 32;
 const UNDO_DURATION = 4000;
+// With a screen reader the message is read first, so Undo stays longer.
+const SCREEN_READER_UNDO_DURATION = 10000;
 const TAP_VIBRATION = 15;
 const GOAL_VIBRATION = [0, 40, 60, 40];
 const GOAL_GLASSES = DAILY_GOAL_ML / GLASS_ML;
@@ -66,6 +71,8 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
   // Counts the celebrations, so reaching the goal again starts new confetti.
   const [celebration, setCelebration] = useState(0);
   const endCelebration = useCallback(() => setCelebration(0), []);
+  const [isScreenReaderOn, setIsScreenReaderOn] = useState(false);
+  const isMotionReduced = useReducedMotion();
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const dateKey = toDateKey(today);
   const progress = getWaterProgress(glasses ?? 0);
@@ -95,10 +102,25 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
   useEffect(() => {
     if (!lastChange) return;
 
-    const timer = setTimeout(() => setLastChange(null), UNDO_DURATION);
+    const timer = setTimeout(
+      () => setLastChange(null),
+      isScreenReaderOn ? SCREEN_READER_UNDO_DURATION : UNDO_DURATION,
+    );
 
     return () => clearTimeout(timer);
-  }, [lastChange]);
+  }, [lastChange, isScreenReaderOn]);
+
+  useEffect(() => {
+    AccessibilityInfo.isScreenReaderEnabled()
+      .then(setIsScreenReaderOn)
+      .catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener(
+      'screenReaderChanged',
+      setIsScreenReaderOn,
+    );
+
+    return () => subscription.remove();
+  }, []);
 
   function saveGlasses(newGlasses: number) {
     setGlasses(newGlasses);
@@ -131,10 +153,12 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
     if (reachesGoal) {
       Vibration.vibrate(GOAL_VIBRATION);
       setCelebration((count) => count + 1);
-      goalScale.setValue(0.6);
-      Animated.spring(goalScale, {
+      // Grows in without a bounce, or appears at once with reduced motion.
+      goalScale.setValue(isMotionReduced ? 1 : 0.8);
+      Animated.timing(goalScale, {
         toValue: 1,
-        friction: 4,
+        duration: isMotionReduced ? 0 : durations.slow,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start();
     } else {
@@ -206,7 +230,7 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
         </View>
       )}
 
-      {celebration > 0 && (
+      {celebration > 0 && !isMotionReduced && (
         <Confetti key={celebration} onDone={endCelebration} />
       )}
     </View>
@@ -217,7 +241,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 48,
+    paddingTop: SCREEN_TOP,
     paddingBottom: 24,
     backgroundColor: colors.background,
   },
@@ -229,12 +253,12 @@ const styles = StyleSheet.create({
   },
   amount: {
     marginTop: 16,
-    fontSize: 32,
+    fontSize: fontSizes.large,
     fontWeight: 'bold',
     color: colors.water,
   },
   goal: {
-    fontSize: 18,
+    fontSize: fontSizes.subtitle,
     fontWeight: 'normal',
     color: colors.textSecondary,
   },
@@ -244,7 +268,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   goalReached: {
-    fontSize: 16,
+    fontSize: fontSizes.body,
     lineHeight: 22,
     fontWeight: 'bold',
     color: colors.water,
@@ -254,7 +278,7 @@ const styles = StyleSheet.create({
   },
   note: {
     marginHorizontal: 16,
-    fontSize: 13,
+    fontSize: fontSizes.label,
     textAlign: 'center',
     color: colors.textSecondary,
   },
@@ -268,11 +292,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     height: 52,
     paddingHorizontal: 20,
-    borderRadius: 16,
+    borderRadius: radii.chip,
     backgroundColor: colors.text,
   },
   undoMessage: {
-    color: colors.surface,
+    color: colors.onColor,
   },
   undoText: {
     fontWeight: 'bold',

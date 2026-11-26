@@ -366,3 +366,44 @@ test('closes the keyboard when tapping outside the fields', async () => {
   expect(onClose).not.toHaveBeenCalled();
   dismiss.mockRestore();
 });
+test('has the screen reader read a time error as soon as it appears', async () => {
+  // The error is a live message, so it is heard without looking for it.
+  await renderModal();
+
+  await fireEvent.press(screen.getByText('Add'));
+
+  expect(screen.getByText(errorMessage).props.accessibilityLiveRegion).toBe('polite');
+});
+
+test('keeps an unsaved new activity until it is added or cancelled', async () => {
+  // Closing with the back button keeps what was typed; Cancel discards it.
+  await renderModal();
+  await type('Activity title', 'Dentist');
+  await type('Start time', '1630');
+  await screen.unmount();
+
+  await renderModal();
+  expect(valueOf('Activity title')).toBe('Dentist');
+  expect(valueOf('Start time')).toBe('16:30');
+
+  await fireEvent.press(screen.getByText('Cancel'));
+  await screen.unmount();
+  await renderModal();
+
+  expect(valueOf('Activity title')).toBe('');
+});
+
+test('checks the times when the end field is left', async () => {
+  // The error shows on leaving the field, and goes away while correcting it.
+  await renderModal();
+
+  await type('Start time', '1630');
+  await type('End time', '1600');
+  expect(screen.queryByText(errorMessage)).toBeNull();
+
+  await fireEvent(screen.getByLabelText('End time'), 'blur');
+  expect(screen.getByText(errorMessage)).toBeTruthy();
+
+  await type('End time', '17');
+  expect(screen.queryByText(errorMessage)).toBeNull();
+});

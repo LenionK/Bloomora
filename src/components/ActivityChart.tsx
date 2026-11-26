@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { useStrings } from '../i18n/LanguageContext';
 import { Text } from './AppText';
 import { DayActivities } from '../stats/stats';
-import { colors } from '../theme';
+import { colors, fontSizes } from '../theme';
 import ChartDayLabels, {
   BAR_RADIUS,
   BARS_HEIGHT,
@@ -68,7 +68,7 @@ export default function ActivityChart({ days }: Props) {
       </View>
       <ChartDayLabels
         dates={days.map(({ date }) => date)}
-        todayBackground={colors.primarySoft}
+        todayBackground={colors.primaryContainer}
         todayColor={colors.primary}
       />
     </View>
@@ -87,6 +87,7 @@ const styles = StyleSheet.create({
     height: BARS_HEIGHT + VALUE_HEIGHT,
   },
   denseChart: {
+    // Optical exception to the 4-point grid: up to 30 thin bars side by side.
     gap: 2,
   },
   column: {
@@ -96,8 +97,8 @@ const styles = StyleSheet.create({
   },
   value: {
     alignSelf: 'center',
-    marginBottom: 2,
-    fontSize: 10,
+    marginBottom: 4,
+    fontSize: fontSizes.caption,
     fontWeight: 'bold',
     color: colors.primary,
   },
@@ -119,7 +120,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.neutral,
+    backgroundColor: colors.chartEmpty,
   },
   smallDot: {
     width: 4,

@@ -14,7 +14,8 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, durations } from '../theme';
+import { useReducedMotion } from './useReducedMotion';
 
 // A sport bottle with straight sides and a flip lid.
 const BOTTLE_PATH =
@@ -37,7 +38,6 @@ const WAVE_LENGTH = 60;
 const WAVE_HEIGHT = 5;
 const BACK_WAVE_RISE = 4;
 const WAVE_DURATION = 3000;
-const FILL_DURATION = 500;
 // The water layer, in drawing units: a wave on top of the full height of water.
 const WATER_HEIGHT = FILL_RANGE + WAVE_HEIGHT + BACK_WAVE_RISE;
 const WAVE_VIEW_WIDTH = VIEW_WIDTH + WAVE_LENGTH;
@@ -108,17 +108,21 @@ export default function WaterBottle({ share, size }: Props) {
   const t = useStrings();
   const percent = Math.round(share * 100);
   const isPercentUnderWater = level < PERCENT_MIDDLE;
+  const isMotionReduced = useReducedMotion();
 
   useEffect(() => {
     Animated.timing(animatedShare, {
       toValue: share,
-      duration: FILL_DURATION,
+      duration: isMotionReduced ? 0 : durations.slow,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [animatedShare, share]);
+  }, [animatedShare, isMotionReduced, share]);
 
+  // Waves and bubbles are an ambient exception to the short durations, and
+  // stay still when the phone asks for less motion.
   useEffect(() => {
+    if (isMotionReduced) return;
     const loop = Animated.loop(
       Animated.timing(wave, {
         toValue: 1,
@@ -130,9 +134,10 @@ export default function WaterBottle({ share, size }: Props) {
 
     loop.start();
     return () => loop.stop();
-  }, [wave]);
+  }, [isMotionReduced, wave]);
 
   useEffect(() => {
+    if (isMotionReduced) return;
     const rising = Animated.parallel(
       BUBBLES.map(({ duration, delay }, index) =>
         Animated.sequence([
@@ -151,7 +156,7 @@ export default function WaterBottle({ share, size }: Props) {
 
     rising.start();
     return () => rising.stop();
-  }, [bubbles]);
+  }, [bubbles, isMotionReduced]);
 
   // An empty bottle hides the waves too, which would otherwise show at the bottom.
   const waterShift = animatedShare.interpolate({
@@ -184,7 +189,7 @@ export default function WaterBottle({ share, size }: Props) {
         viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
         width={width}
       >
-        <Path d={BOTTLE_PATH} fill={colors.waterSoft} />
+        <Path d={BOTTLE_PATH} fill={colors.waterContainer} />
       </Svg>
 
       <View
@@ -262,7 +267,7 @@ export default function WaterBottle({ share, size }: Props) {
 
         {/* A shine on the glass itself, so it stays put whatever the level. */}
         <Rect
-          fill={colors.surface}
+          fill={colors.onColor}
           height={REFLECTION_BOTTOM - REFLECTION_TOP}
           opacity={0.55}
           rx={3.5}
@@ -276,7 +281,7 @@ export default function WaterBottle({ share, size }: Props) {
           const y = levelOf(markShare);
           // At the mark's own level the water covers it too, as at 100%.
           const isCovered = level <= y;
-          const color = isCovered ? colors.surface : colors.water;
+          const color = isCovered ? colors.onColor : colors.water;
 
           return (
             <G key={markShare}>
@@ -347,10 +352,10 @@ export default function WaterBottle({ share, size }: Props) {
           {
             top: (PERCENT_MIDDLE - PERCENT_FONT_SIZE * 0.65) * scale,
             fontSize: PERCENT_FONT_SIZE * scale,
-            color: isPercentUnderWater ? colors.surface : colors.water,
+            color: isPercentUnderWater ? colors.onColor : colors.water,
             textShadowColor: isPercentUnderWater
               ? colors.waterDark
-              : colors.waterSoft,
+              : colors.waterContainer,
           },
         ]}
       >
@@ -377,7 +382,7 @@ const styles = StyleSheet.create({
   },
   bubble: {
     position: 'absolute',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.onColor,
   },
   percent: {
     position: 'absolute',

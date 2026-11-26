@@ -1,10 +1,11 @@
 import { memo, useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Pressable from './Pressable';
 import { Text } from './AppText';
 import { Activity, getDaysWithActivities } from '../calendar/activities';
 import { buildMonthGrid } from '../calendar/monthGrid';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, fontSizes } from '../theme';
 
 const CELL_HEIGHT = 48;
 // The weekday row plus the 6 weeks of the longest months, so that what is below
@@ -22,6 +23,8 @@ type Props = {
 
 type DayCellProps = {
   day: number;
+  // The whole date, read by the screen reader instead of the number alone.
+  label: string;
   isToday: boolean;
   isPast: boolean;
   isSelected: boolean;
@@ -32,17 +35,16 @@ type DayCellProps = {
 // Redrawn only when its own values change, so most of the grid is left alone.
 const DayCell = memo(function DayCell({
   day,
+  label,
   isToday,
   isPast,
   isSelected,
   hasActivities,
   onSelectDay,
 }: DayCellProps) {
-  const t = useStrings();
-
   return (
     <Pressable
-      accessibilityHint={hasActivities ? t.calendar.hasActivities : undefined}
+      accessibilityLabel={label}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
       onPress={() => onSelectDay(day)}
@@ -125,6 +127,11 @@ export default function CalendarGrid({
               <DayCell
                 day={day}
                 hasActivities={hasActivities}
+                label={t.calendar.dayLabel(
+                  new Date(year, month, day),
+                  isToday,
+                  hasActivities,
+                )}
                 isPast={day < firstDayAhead}
                 isSelected={isSelected}
                 isToday={isToday}
@@ -152,7 +159,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   weekday: {
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     fontWeight: 'bold',
     color: colors.textSecondary,
   },
@@ -177,7 +184,7 @@ const styles = StyleSheet.create({
   },
   todayText: {
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
   selected: {
     borderWidth: 2,
@@ -193,7 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   todayDot: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.onColor,
   },
   todaySelectedRing: {
     position: 'absolute',
@@ -203,6 +210,6 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     borderWidth: 2,
-    borderColor: colors.surface,
+    borderColor: colors.onColor,
   },
 });

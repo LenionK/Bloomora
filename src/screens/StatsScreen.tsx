@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import {
   BackHandler,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -12,6 +11,7 @@ import { Text } from '../components/AppText';
 import { Activity, toDateKey } from '../calendar/activities';
 import ActivityBreakdown from '../components/ActivityBreakdown';
 import ActivityChart from '../components/ActivityChart';
+import Button from '../components/Button';
 import { weekdayOf } from '../components/ChartDayLabels';
 import ScoreRing from '../components/ScoreRing';
 import ScreenHeader from '../components/ScreenHeader';
@@ -37,7 +37,7 @@ import {
 } from '../storage/activityDatabase';
 import { Strings } from '../i18n/en';
 import { useStrings } from '../i18n/LanguageContext';
-import { cardShadow, colors } from '../theme';
+import { cardShadow, colors, fontSizes, radii, SCREEN_TOP } from '../theme';
 import { DAILY_GOAL_ML, formatLitres } from '../water/water';
 
 const ACTIVITIES_RING_SIZE = 96;
@@ -172,7 +172,8 @@ export default function StatsScreen({
       />
 
       {keptStats === null || waterDays === null || statsStart === undefined ? (
-        <Text style={styles.loading}>…</Text>
+        // Loaded from the phone in a few milliseconds: no loader, so nothing flickers.
+        null
       ) : (
         <StatsContent
           activities={activities}
@@ -216,15 +217,15 @@ function ActivitiesCard({
             <Ionicons
               name="checkmark-done-outline"
               size={36}
-              color={colors.surface}
+              color={colors.onColor}
             />
           </View>
         ) : (
           <ScoreRing
-            color={colors.surface}
+            color={colors.onColor}
             score={score}
             size={ACTIVITIES_RING_SIZE}
-            trackColor={colors.primaryLight}
+            trackColor={colors.onPrimaryMuted}
           />
         )}
         <View style={styles.activitiesSummary}>
@@ -232,15 +233,15 @@ function ActivitiesCard({
           {score === null ? (
             <>
               <Text style={styles.activitiesEmpty}>{t.stats.nothingToRate}</Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={onPlan}
-                style={[styles.actionButton, styles.planButton]}
-              >
-                <Text style={[styles.actionText, styles.planText]}>
-                  {t.nextActivity.plan}
-                </Text>
-              </Pressable>
+              <View style={styles.buttonSlot}>
+                <Button
+                  color={colors.onColor}
+                  isCompact
+                  label={t.nextActivity.plan}
+                  onPress={onPlan}
+                  textColor={colors.primary}
+                />
+              </View>
             </>
           ) : (
             <>
@@ -331,13 +332,14 @@ function StatsContent({
           {shownWaterScore === null ? (
             <>
               <Text style={styles.waterCaption}>{t.stats.notTrackedYet}</Text>
-              <Pressable
-                accessibilityRole="button"
-                onPress={onAddWater}
-                style={[styles.actionButton, styles.waterButton]}
-              >
-                <Text style={styles.actionText}>{t.stats.addWater}</Text>
-              </Pressable>
+              <View style={styles.buttonSlot}>
+                <Button
+                  color={colors.water}
+                  isCompact
+                  label={t.stats.addWater}
+                  onPress={onAddWater}
+                />
+              </View>
             </>
           ) : (
             <Text style={styles.waterCaption}>
@@ -350,7 +352,7 @@ function StatsContent({
 
         <View style={[styles.card, styles.streakCard]}>
           <View style={styles.flameCircle}>
-            <Ionicons name="flame" size={26} color={colors.surface} />
+            <Ionicons name="flame" size={26} color={colors.onColor} />
           </View>
           <Text style={styles.streakLabel}>{t.stats.waterStreak}</Text>
           <Text style={styles.streakValue}>{t.stats.days(water.currentStreak)}</Text>
@@ -367,6 +369,8 @@ function StatsContent({
           >
             {lastWeek.map(({ date, millilitres }, index) => (
               <View key={date.getTime()} style={styles.weekDay}>
+                {/* Filled when recorded, a ring when not, and a tick at 2 L, so the days
+                    differ by shape and not by colour alone. */}
                 <View
                   style={[
                     styles.weekDot,
@@ -376,10 +380,14 @@ function StatsContent({
                           backgroundColor:
                             millilitres >= DAILY_GOAL_ML
                               ? colors.streak
-                              : colors.streakSoft,
+                              : colors.streakUntracked,
                         },
                   ]}
-                />
+                >
+                  {millilitres !== null && millilitres >= DAILY_GOAL_ML && (
+                    <Ionicons name="checkmark" size={10} color={colors.onColor} />
+                  )}
+                </View>
                 <Text
                   style={[
                     styles.weekDayLabel,
@@ -430,9 +438,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    gap: 10,
+    gap: 8,
     paddingHorizontal: 16,
-    paddingTop: 48,
+    paddingTop: SCREEN_TOP,
     paddingBottom: 24,
   },
   infoCard: {
@@ -442,11 +450,8 @@ const styles = StyleSheet.create({
   infoText: {
     color: colors.text,
   },
-  loading: {
-    color: colors.textSecondary,
-  },
   card: {
-    borderRadius: 24,
+    borderRadius: radii.card,
     backgroundColor: colors.surface,
     ...cardShadow,
   },
@@ -454,22 +459,15 @@ const styles = StyleSheet.create({
   // little and leaves the same room below, sitting halfway between the two.
   periodSelector: {
     ...cardShadow,
-    marginTop: -6,
-    marginBottom: 5,
+    marginTop: -8,
+    marginBottom: 4,
   },
   emptyCircle: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionButton: {
+  buttonSlot: {
     marginTop: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  actionText: {
-    fontWeight: 'bold',
-    color: colors.surface,
   },
 
   activitiesCard: {
@@ -479,46 +477,40 @@ const styles = StyleSheet.create({
   activitiesTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 18,
+    gap: 16,
   },
   activitiesEmptyCircle: {
     width: ACTIVITIES_RING_SIZE,
     height: ACTIVITIES_RING_SIZE,
     borderRadius: ACTIVITIES_RING_SIZE / 2,
     borderWidth: 8,
-    borderColor: colors.primaryLight,
+    borderColor: colors.onPrimaryMuted,
   },
   activitiesSummary: {
     flex: 1,
     alignItems: 'flex-start',
   },
   eyebrow: {
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     fontWeight: 'bold',
     letterSpacing: 1,
-    color: colors.surface,
+    color: colors.onColor,
   },
   activitiesCount: {
-    fontSize: 34,
+    fontSize: fontSizes.large,
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
   activitiesLabel: {
-    fontSize: 16,
+    fontSize: fontSizes.body,
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
   activitiesEmpty: {
     marginTop: 4,
-    fontSize: 18,
+    fontSize: fontSizes.subtitle,
     fontWeight: 'bold',
-    color: colors.surface,
-  },
-  planButton: {
-    backgroundColor: colors.surface,
-  },
-  planText: {
-    color: colors.primary,
+    color: colors.onColor,
   },
   breakdown: {
     marginTop: 12,
@@ -526,13 +518,13 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   waterCard: {
     flex: 1,
     alignItems: 'center',
-    padding: 14,
-    backgroundColor: colors.waterSoft,
+    padding: 16,
+    backgroundColor: colors.waterContainer,
   },
   waterEmptyCircle: {
     width: WATER_RING_SIZE,
@@ -543,24 +535,21 @@ const styles = StyleSheet.create({
   },
   waterTitle: {
     marginTop: 8,
-    fontSize: 16,
+    fontSize: fontSizes.body,
     fontWeight: 'bold',
     color: colors.waterDark,
   },
   waterCaption: {
-    marginTop: 2,
-    fontSize: 13,
+    marginTop: 4,
+    fontSize: fontSizes.label,
     textAlign: 'center',
     color: colors.waterDark,
-  },
-  waterButton: {
-    backgroundColor: colors.water,
   },
 
   streakCard: {
     flex: 1,
-    padding: 14,
-    backgroundColor: colors.streakBackground,
+    padding: 16,
+    backgroundColor: colors.streakContainer,
   },
   flameCircle: {
     width: 44,
@@ -572,11 +561,11 @@ const styles = StyleSheet.create({
   },
   streakLabel: {
     marginTop: 8,
-    fontSize: 13,
-    color: colors.streak,
+    fontSize: fontSizes.label,
+    color: colors.streakText,
   },
   streakValue: {
-    fontSize: 26,
+    fontSize: fontSizes.headline,
     fontWeight: 'bold',
     color: colors.streak,
   },
@@ -587,29 +576,31 @@ const styles = StyleSheet.create({
   },
   weekDay: {
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
   },
   weekDot: {
     width: 14,
     height: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 7,
   },
   untrackedWeekDot: {
     borderWidth: 2,
-    borderColor: colors.streakSoft,
+    borderColor: colors.streakUntracked,
   },
   weekDayLabel: {
-    fontSize: 10,
+    fontSize: fontSizes.caption,
     color: colors.textSecondary,
   },
   todayWeekDay: {
     fontWeight: 'bold',
-    color: colors.streak,
+    color: colors.streakText,
   },
 
   chartCard: {
     gap: 8,
-    padding: 14,
+    padding: 16,
   },
   legendRow: {
     flexDirection: 'row',
