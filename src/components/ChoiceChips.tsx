@@ -2,19 +2,24 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { colors } from '../theme';
 
-type Option = {
-  value: number | null;
+type Option<T> = {
+  value: T;
   label: string;
 };
 
-type Props = {
+type Props<T> = {
   label: string;
-  options: Option[];
-  value: number | null;
-  onChange: (value: number | null) => void;
+  options: Option<T>[];
+  value: T;
+  onChange: (value: T) => void;
 };
 
-export default function ChoiceChips({ label, options, value, onChange }: Props) {
+export default function ChoiceChips<T extends string | number | null>({
+  label,
+  options,
+  value,
+  onChange,
+}: Props<T>) {
   return (
     <View accessibilityLabel={label} accessibilityRole="radiogroup" style={styles.row}>
       {options.map((option) => {

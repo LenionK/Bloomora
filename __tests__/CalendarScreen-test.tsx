@@ -1,7 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
+import { pickCalendarFile } from '../src/calendar/icsFile';
 import CalendarScreen from '../src/screens/CalendarScreen';
 import { colors } from '../src/theme';
+
+jest.mock('../src/calendar/icsFile', () => ({
+  ...jest.requireActual('../src/calendar/icsFile'),
+  pickCalendarFile: jest.fn(),
+}));
 
 const today = new Date(2026, 10, 2);
 
@@ -521,6 +527,31 @@ test('shows the storage and deletes old activities from the settings', async () 
   await fireEvent.press(screen.getByLabelText('Older than a month'));
   await fireEvent.press(screen.getByText('Delete'));
   expect(await screen.findByText('0 saved')).toBeTruthy();
+});
+
+test('adds the activities imported from the settings to the calendar', async () => {
+  // An imported event shows up on its day, and again importing it adds nothing.
+  jest
+    .mocked(pickCalendarFile)
+    .mockResolvedValue(
+      'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nSUMMARY:Dentist\r\nDTSTART:20261105T100000\r\nEND:VEVENT\r\nEND:VCALENDAR',
+    );
+  await render(<CalendarScreen today={today} />);
+
+  await fireEvent.press(screen.getByLabelText('Settings'));
+  await fireEvent.press(screen.getByLabelText('Import from an .ics file'));
+  await fireEvent.press(await screen.findByRole('button', { name: 'Import' }));
+  expect(screen.getByText('1 saved')).toBeTruthy();
+
+  await fireEvent.press(screen.getByLabelText('Import from an .ics file'));
+  expect(
+    await screen.findByText(
+      'Nothing new to import. Left out: 1 activity already in the calendar.',
+    ),
+  ).toBeTruthy();
+
+  await fireEvent.press(screen.getByLabelText('Back to calendar'));
+  expect(dotColor('5')).toBe(colors.primary);
 });
 
 test('marks the days with activities with a dot', async () => {

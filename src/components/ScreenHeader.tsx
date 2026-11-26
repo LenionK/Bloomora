@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 
 type Props = {
@@ -17,6 +18,8 @@ export default function ScreenHeader({
   onInfo,
   isInfoOpen = false,
 }: Props) {
+  const t = useStrings();
+
   return (
     <View style={styles.header}>
       {/* Centred on the whole width, so the arrow does not push it aside. */}
@@ -28,7 +31,7 @@ export default function ScreenHeader({
         {title}
       </Text>
       <Pressable
-        accessibilityLabel="Back to calendar"
+        accessibilityLabel={t.common.backToCalendar}
         accessibilityRole="button"
         hitSlop={8}
         onPress={onBack}
@@ -38,7 +41,7 @@ export default function ScreenHeader({
       </Pressable>
       {onInfo && (
         <Pressable
-          accessibilityLabel={`About ${title.toLowerCase()}`}
+          accessibilityLabel={t.common.about(title)}
           accessibilityRole="button"
           accessibilityState={{ expanded: isInfoOpen }}
           hitSlop={8}

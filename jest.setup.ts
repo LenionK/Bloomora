@@ -14,6 +14,11 @@ jest.mock('react-native-safe-area-context', () =>
   jest.requireActual('react-native-safe-area-context/jest/mock').default,
 );
 
+// Tests run in English, whatever the language of the computer.
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageCode: 'en' }]),
+}));
+
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn(async () => null),

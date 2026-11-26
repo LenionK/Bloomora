@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { useStrings } from '../i18n/LanguageContext';
 import { Text } from './AppText';
 import { DayWater } from '../stats/stats';
 import { colors } from '../theme';
@@ -20,6 +21,7 @@ type Props = {
 // The chart keeps the same height for any number of days, so switching between
 // them moves nothing around it.
 export default function WaterChart({ days }: Props) {
+  const t = useStrings();
   const isShort = days.length <= MAX_DAYS_WITH_VALUES;
   const scale = Math.max(
     DAILY_GOAL_ML * 1.25,
@@ -29,13 +31,13 @@ export default function WaterChart({ days }: Props) {
 
   return (
     <View>
-      <Text style={styles.caption}>Goal {formatLitres(DAILY_GOAL_ML)}</Text>
+      <Text style={styles.caption}>{t.charts.goal(formatLitres(DAILY_GOAL_ML))}</Text>
       <View style={[styles.chart, !isShort && styles.denseChart]}>
         <View style={[styles.goalLine, { bottom: goalBottom }]} />
         {days.map(({ date, millilitres }) => (
           <View
-            accessibilityLabel={`${weekdayOf(date)} ${date.getDate()}: ${
-              millilitres === null ? 'not tracked' : formatLitres(millilitres)
+            accessibilityLabel={`${weekdayOf(date, t)} ${date.getDate()}: ${
+              millilitres === null ? t.charts.notTrackedDay : formatLitres(millilitres)
             }`}
             accessible
             key={date.getTime()}
@@ -78,11 +80,13 @@ export default function WaterChart({ days }: Props) {
 }
 
 // The key for the dots, kept apart from the chart so it never changes its height.
-export function UntrackedLegend({ label = 'Not tracked' }: { label?: string }) {
+export function UntrackedLegend({ label }: { label?: string }) {
+  const t = useStrings();
+
   return (
     <View style={styles.legend}>
       <View style={styles.untrackedDot} />
-      <Text style={styles.legendText}>{label}</Text>
+      <Text style={styles.legendText}>{label ?? t.charts.notTracked}</Text>
     </View>
   );
 }

@@ -10,6 +10,7 @@ import {
   setNotificationHandler,
 } from 'expo-notifications';
 import { Activity, toDateKey } from '../calendar/activities';
+import { getCurrentLanguage, getStrings, Language } from '../i18n/language';
 import {
   loadReminderSettings,
   loadWaterGlasses,
@@ -18,13 +19,16 @@ import { getActivityReminders, getWaterReminders, Reminder } from './reminders';
 
 export const TEST_DELAY_SECONDS = 5;
 
-let isPrepared = false;
+// Channels are named again when the language changes.
+let preparedLanguage: Language | null = null;
 let hasChannels = false;
 let pendingRefresh: Promise<void> = Promise.resolve();
 
 // Android shows the permission prompt only once a channel exists.
 async function prepare(): Promise<void> {
-  if (isPrepared) return;
+  const language = getCurrentLanguage();
+  if (preparedLanguage === language) return;
+  const t = getStrings(language);
 
   setNotificationHandler({
     handleNotification: async () => ({
@@ -38,18 +42,18 @@ async function prepare(): Promise<void> {
   // the default channel instead of being lost.
   try {
     await setNotificationChannelAsync('activities', {
-      name: 'Activities',
+      name: t.notifications.activitiesChannel,
       importance: AndroidImportance.HIGH,
     });
     await setNotificationChannelAsync('water', {
-      name: 'Water',
+      name: t.notifications.waterChannel,
       importance: AndroidImportance.DEFAULT,
     });
     hasChannels = true;
   } catch (error) {
     console.warn('Notification channels unavailable, using the default one', error);
   }
-  isPrepared = true;
+  preparedLanguage = language;
 }
 
 function channelOf(channelId: Reminder['channelId']): { channelId?: string } {
@@ -108,7 +112,7 @@ export async function sendTestNotification(): Promise<boolean> {
   if (!(await hasPermission())) return false;
 
   await scheduleNotificationAsync({
-    content: { title: 'Bloomora', body: 'Notifications are working.' },
+    content: { title: 'Bloomora', body: getStrings().notifications.testBody },
     trigger: {
       type: SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds: TEST_DELAY_SECONDS,

@@ -23,7 +23,8 @@ Most calendar apps on the Play Store are full of ads or lock basic features behi
 - [x] Daily water tracker, filling a bottle one 200 ml glass at a time towards 2 litres
 - [x] Notifications before activities and reminders to drink, set from the settings
 - [x] Stats with water streaks and scores for activities and water
-- [ ] Import events from an `.ics` file
+- [x] Import events from an `.ics` file, from today on
+- [x] English and Italian, following the phone or chosen in the settings
 - [ ] Export activities to an `.ics` file for Google Calendar and other calendar apps
 - [ ] Save activities directly to the phone's calendar
 - [ ] Dark theme that follows the phone

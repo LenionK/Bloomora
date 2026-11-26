@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { Activity } from '../calendar/activities';
-import { WEEKDAY_LABELS } from '../calendar/monthGrid';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import Logo from './Logo';
 
@@ -23,8 +23,9 @@ export default function ActivityCard({
   onEdit,
   onDelete,
 }: Props) {
+  const t = useStrings();
   const repeat = activity.repeatDays
-    .map((day) => WEEKDAY_LABELS[day])
+    .map((day) => t.dates.weekdaysShort[day])
     .join(', ');
 
   return (
@@ -36,7 +37,7 @@ export default function ActivityCard({
         <Logo color={colors.surface} size={28} />
       )}
       <Pressable
-        accessibilityLabel={`Edit ${activity.title}`}
+        accessibilityLabel={t.activity.edit(activity.title)}
         accessibilityRole="button"
         onPress={onEdit}
         style={styles.details}
@@ -59,7 +60,7 @@ export default function ActivityCard({
         )}
       </Pressable>
       <Pressable
-        accessibilityLabel={`${activity.title} done`}
+        accessibilityLabel={t.activity.done(activity.title)}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: isCompleted }}
         hitSlop={8}
@@ -72,7 +73,7 @@ export default function ActivityCard({
         />
       </Pressable>
       <Pressable
-        accessibilityLabel={`Delete ${activity.title}`}
+        accessibilityLabel={t.activity.delete(activity.title)}
         accessibilityRole="button"
         hitSlop={8}
         onPress={onDelete}

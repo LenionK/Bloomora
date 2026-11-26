@@ -8,18 +8,16 @@ import {
 } from 'react-native';
 import { Text } from './AppText';
 import { Activity, getUpcomingDates, toDateKey } from '../calendar/activities';
-import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
+import { Strings } from '../i18n/en';
+import { shortWeekday } from '../i18n/dates';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import Logo from './Logo';
 
 const UPCOMING_DATES = 8;
-const OPTIONS = [
-  { value: 'day', label: 'Only this day' },
-  { value: 'someDays', label: 'Some days' },
-  { value: 'all', label: 'Delete all' },
-] as const;
+const OPTIONS = ['day', 'someDays', 'all'] as const;
 
-type DeleteOption = (typeof OPTIONS)[number]['value'];
+type DeleteOption = (typeof OPTIONS)[number];
 
 type Props = {
   activity: Activity;
@@ -29,11 +27,10 @@ type Props = {
   onClose: () => void;
 };
 
-function formatShortDate(date: Date) {
-  const weekday = WEEKDAY_LABELS[(date.getDay() + 6) % 7];
-  const month = MONTH_NAMES[date.getMonth()].slice(0, 3);
+function formatShortDate(date: Date, t: Strings) {
+  const month = t.dates.monthsShort[date.getMonth()];
 
-  return `${weekday} ${date.getDate()} ${month}`;
+  return `${shortWeekday(date, t)} ${date.getDate()} ${month}`;
 }
 
 export default function DeleteActivityModal({
@@ -43,6 +40,7 @@ export default function DeleteActivityModal({
   onSkipDates,
   onClose,
 }: Props) {
+  const t = useStrings();
   const dateKey = toDateKey(date);
   const isRepeating = activity.repeatDays.length > 0;
   const [option, setOption] = useState<DeleteOption>('day');
@@ -75,15 +73,15 @@ export default function DeleteActivityModal({
                 numberOfLines={2}
                 style={[styles.title, { color: activity.color }]}
               >
-                Delete “{activity.title}”?
+                {t.deleteActivity.title(activity.title)}
               </Text>
-              <Text style={styles.date}>{formatShortDate(date)}</Text>
+              <Text style={styles.date}>{formatShortDate(date, t)}</Text>
             </View>
             <Logo color={activity.color} size={44} />
           </View>
 
           {isRepeating &&
-            OPTIONS.map(({ value, label }) => (
+            OPTIONS.map((value) => (
               <Pressable
                 accessibilityRole="radio"
                 accessibilityState={{ checked: option === value }}
@@ -100,7 +98,7 @@ export default function DeleteActivityModal({
                   size={22}
                   color={activity.color}
                 />
-                <Text style={styles.optionText}>{label}</Text>
+                <Text style={styles.optionText}>{t.deleteActivity.options[value]}</Text>
               </Pressable>
             ))}
 
@@ -128,7 +126,7 @@ export default function DeleteActivityModal({
                           isSelected && styles.selectedDateText,
                         ]}
                       >
-                        {formatShortDate(upcomingDate)}
+                        {formatShortDate(upcomingDate, t)}
                       </Text>
                     </Pressable>
                   );
@@ -143,7 +141,7 @@ export default function DeleteActivityModal({
               onPress={onClose}
               style={styles.button}
             >
-              <Text style={{ color: activity.color }}>Cancel</Text>
+              <Text style={{ color: activity.color }}>{t.common.cancel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -155,7 +153,7 @@ export default function DeleteActivityModal({
                 !canConfirm && styles.disabledButton,
               ]}
             >
-              <Text style={styles.confirmText}>Delete</Text>
+              <Text style={styles.confirmText}>{t.common.delete}</Text>
             </Pressable>
           </View>
         </View>

@@ -1,3 +1,5 @@
+import { getStrings } from '../i18n/language';
+
 export const GLASS_ML = 200;
 export const DAILY_GOAL_ML = 2000;
 
@@ -18,7 +20,9 @@ export function getWaterProgress(glasses: number): WaterProgress {
   };
 }
 
-// One decimal at most, and none when it is zero: 1.4 L, 2 L.
+// One decimal at most, and none when it is zero: 1.4 L, 2 L, or 1,4 L in Italian.
 export function formatLitres(millilitres: number): string {
-  return `${Number((millilitres / 1000).toFixed(1))} L`;
+  const litres = String(Number((millilitres / 1000).toFixed(1)));
+
+  return `${litres.replace('.', getStrings().decimalSeparator)} L`;
 }

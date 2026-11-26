@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Keyboard, StyleSheet } from 'react-native';
 import AddActivityModal from '../src/components/AddActivityModal';
 import { activityColors, colors } from '../src/theme';
 
@@ -352,4 +352,17 @@ test('closes without adding when cancelled', async () => {
 
   expect(onClose).toHaveBeenCalledTimes(1);
   expect(onAdd).not.toHaveBeenCalled();
+});
+
+test('closes the keyboard when tapping outside the fields', async () => {
+  // A tap on the popup or around it hides the keyboard, without closing the popup.
+  const dismiss = jest.spyOn(Keyboard, 'dismiss');
+  const onClose = jest.fn();
+  await renderModal(jest.fn(), onClose);
+
+  await fireEvent.press(screen.getByTestId('add-activity-backdrop'));
+
+  expect(dismiss).toHaveBeenCalledTimes(1);
+  expect(onClose).not.toHaveBeenCalled();
+  dismiss.mockRestore();
 });

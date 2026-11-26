@@ -6,6 +6,7 @@ import {
   toDateKey,
 } from '../calendar/activities';
 import { formatDuration, formatTime } from '../calendar/time';
+import { getStrings } from '../i18n/language';
 import { DAILY_GOAL_ML, GLASS_ML } from '../water/water';
 
 export type ReminderSettings = {
@@ -56,6 +57,7 @@ export function getActivityReminders(
 ): Reminder[] {
   if (leadMinutes === null) return [];
 
+  const t = getStrings();
   const reminders: Reminder[] = [];
 
   for (const day of upcomingDays(now)) {
@@ -72,8 +74,8 @@ export function getActivityReminders(
         title: activity.title,
         body:
           leadMinutes === 0
-            ? `Starts now, at ${formatTime(start)}`
-            : `In ${formatDuration(leadMinutes)}, at ${formatTime(start)}`,
+            ? t.notifications.startsNow(formatTime(start))
+            : t.notifications.startsIn(formatDuration(leadMinutes), formatTime(start)),
         channelId: 'activities',
       });
     }
@@ -94,6 +96,7 @@ export function getWaterReminders(
   const { waterIntervalMinutes, waterStartMinutes, waterEndMinutes } = settings;
   if (waterIntervalMinutes === null) return [];
 
+  const t = getStrings();
   const reminders: Reminder[] = [];
   const isGoalReachedToday = glassesToday * GLASS_ML >= DAILY_GOAL_ML;
 
@@ -111,8 +114,8 @@ export function getWaterReminders(
       reminders.push({
         id: `water-${toDateKey(day)}-${minutes}`,
         date,
-        title: 'Time for a glass of water',
-        body: 'Every glass brings you closer to 2 L today.',
+        title: t.notifications.waterTitle,
+        body: t.notifications.waterBody,
         channelId: 'water',
       });
     }

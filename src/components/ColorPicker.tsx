@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useStrings } from '../i18n/LanguageContext';
 import { activityColors } from '../theme';
 
 type Props = {
@@ -8,6 +9,8 @@ type Props = {
 };
 
 export default memo(function ColorPicker({ value, onChange }: Props) {
+  const t = useStrings();
+
   return (
     <View accessibilityRole="radiogroup" style={styles.row}>
       {activityColors.map((color) => {
@@ -15,7 +18,7 @@ export default memo(function ColorPicker({ value, onChange }: Props) {
 
         return (
           <Pressable
-            accessibilityLabel={color.name}
+            accessibilityLabel={t.colorNames[color.name] ?? color.name}
             accessibilityRole="radio"
             accessibilityState={{ checked: isSelected }}
             key={color.value}

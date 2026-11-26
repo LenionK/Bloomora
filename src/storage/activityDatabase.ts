@@ -1,5 +1,6 @@
 import { openDatabaseAsync, SQLiteDatabase } from 'expo-sqlite';
 import { Activity } from '../calendar/activities';
+import type { LanguageSetting } from '../i18n/language';
 import {
   DEFAULT_REMINDER_SETTINGS,
   ReminderSettings,
@@ -9,6 +10,7 @@ import { ActivityRow, activityToRow, rowToActivity } from './activityRow';
 
 const ACTIVITY_STATS_NAMES = ['done', 'skipped', 'missed'] as const;
 const STATS_START = 'statsStart';
+const LANGUAGE = 'language';
 
 let databasePromise: Promise<SQLiteDatabase> | null = null;
 
@@ -81,7 +83,24 @@ export async function loadActivities(): Promise<Activity[]> {
 }
 
 export async function saveActivity(activity: Activity): Promise<void> {
+  await insertActivity(await getDatabase(), activity);
+}
+
+// Imported activities are saved all together, or none of them if one fails.
+export async function saveActivities(activities: Activity[]): Promise<void> {
   const database = await getDatabase();
+
+  await database.withTransactionAsync(async () => {
+    for (const activity of activities) {
+      await insertActivity(database, activity);
+    }
+  });
+}
+
+async function insertActivity(
+  database: SQLiteDatabase,
+  activity: Activity,
+): Promise<void> {
   const row = activityToRow(activity);
 
   await database.runAsync(
@@ -220,6 +239,27 @@ export async function resetStats(todayKey: string): Promise<void> {
 }
 
 // Settings never saved keep their default, so new ones need no migration.
+// System, the default, follows the phone's language.
+export async function loadLanguageSetting(): Promise<LanguageSetting> {
+  const database = await getDatabase();
+  const row = await database.getFirstAsync<{ value: string }>(
+    'SELECT value FROM settings WHERE name = ?',
+    [LANGUAGE],
+  );
+  const setting = row?.value ? JSON.parse(row.value) : null;
+
+  return setting === 'en' || setting === 'it' ? setting : 'system';
+}
+
+export async function saveLanguageSetting(setting: LanguageSetting): Promise<void> {
+  const database = await getDatabase();
+
+  await database.runAsync(
+    'INSERT OR REPLACE INTO settings (name, value) VALUES (?, ?)',
+    [LANGUAGE, JSON.stringify(setting)],
+  );
+}
+
 export async function loadReminderSettings(): Promise<ReminderSettings> {
   const database = await getDatabase();
   const rows = await database.getAllAsync<{ name: string; value: string }>(

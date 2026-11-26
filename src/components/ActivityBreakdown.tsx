@@ -1,13 +1,14 @@
 import { StyleSheet, View } from 'react-native';
+import { useStrings } from '../i18n/LanguageContext';
 import { Text } from './AppText';
 import { ActivityStats, getScore } from '../stats/stats';
 import { colors } from '../theme';
 
 // Drawn on the primary colour of the activities card.
 const PARTS = [
-  { key: 'done', label: 'Done', color: colors.surface },
-  { key: 'missed', label: 'Missed', color: colors.primaryLight },
-  { key: 'skipped', label: 'Cancelled', color: colors.primaryDark },
+  { key: 'done', color: colors.surface },
+  { key: 'missed', color: colors.primaryLight },
+  { key: 'skipped', color: colors.primaryDark },
 ] as const;
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 // One bar split by how the past days of the activities went. Each part also
 // gets its count and share in the legend, so the colours are not needed to read it.
 export default function ActivityBreakdown({ stats }: Props) {
+  const t = useStrings();
   const total = stats.done + stats.missed + stats.skipped;
 
   return (
@@ -32,11 +34,11 @@ export default function ActivityBreakdown({ stats }: Props) {
         )}
       </View>
       <View style={styles.legend}>
-        {PARTS.map(({ key, label, color }) => (
+        {PARTS.map(({ key, color }) => (
           <View key={key} style={styles.legendItem}>
             <View style={[styles.dot, { backgroundColor: color }]} />
             <Text style={styles.legendText}>
-              {label} {stats[key]} · {getScore(stats[key], total) ?? 0}%
+              {t.stats.parts[key]} {stats[key]} · {getScore(stats[key], total) ?? 0}%
             </Text>
           </View>
         ))}

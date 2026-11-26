@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { Occurrence } from '../calendar/activities';
-import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
+import { formatDayMonth, shortWeekday } from '../i18n/dates';
+import { useStrings } from '../i18n/LanguageContext';
 import { formatTime } from '../calendar/time';
 import { cardShadow, colors } from '../theme';
 import Logo from './Logo';
@@ -13,26 +14,27 @@ type Props = {
 };
 
 export default function NextActivityCard({ occurrence, onPress, onPlan }: Props) {
+  const t = useStrings();
+
   // With nothing planned, the card invites to plan instead of only saying so.
   if (!occurrence) {
     return (
       <Pressable
-        accessibilityLabel="Plan an activity"
+        accessibilityLabel={t.nextActivity.plan}
         accessibilityRole="button"
         onPress={onPlan}
         style={[styles.card, styles.emptyCard]}
       >
         <Logo color={colors.surface} size={40} />
         <View style={styles.details}>
-          <Text style={styles.emptyTitle}>No upcoming activities</Text>
-          <Text style={styles.emptyText}>Tap to plan your next one</Text>
+          <Text style={styles.emptyTitle}>{t.nextActivity.emptyTitle}</Text>
+          <Text style={styles.emptyText}>{t.nextActivity.emptyText}</Text>
         </View>
       </Pressable>
     );
   }
 
   const { activity, start, end } = occurrence;
-  const weekday = WEEKDAY_LABELS[(start.getDay() + 6) % 7];
 
   return (
     <Pressable
@@ -43,7 +45,7 @@ export default function NextActivityCard({ occurrence, onPress, onPlan }: Props)
       <Logo color={colors.surface} size={40} />
       <View style={styles.details}>
         <Text style={styles.label}>
-          Next · {weekday} {start.getDate()} {MONTH_NAMES[start.getMonth()]}
+          {t.nextActivity.next} · {shortWeekday(start, t)} {formatDayMonth(start, t)}
         </Text>
         <Text numberOfLines={1} style={styles.title}>
           {activity.title}

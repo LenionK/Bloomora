@@ -19,6 +19,7 @@ import {
   loadWaterGlasses,
   saveWaterGlasses,
 } from '../storage/activityDatabase';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import {
   DAILY_GOAL_ML,
@@ -56,6 +57,7 @@ type Props = {
 };
 
 export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
+  const t = useStrings();
   const insets = useSafeAreaInsets();
   // Null until the saved count arrives, so an early tap cannot overwrite it.
   const [glasses, setGlasses] = useState<number | null>(null);
@@ -122,7 +124,7 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
 
     saveGlasses(newGlasses);
     setLastChange({
-      message: `${glassCount > 0 ? 'Added' : 'Removed'} ${GLASS_ML} ml`,
+      message: glassCount > 0 ? t.water.added(GLASS_ML) : t.water.removed(GLASS_ML),
       previousGlasses: glasses,
     });
 
@@ -149,7 +151,7 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
 
   return (
     <View style={[styles.container, { paddingBottom: BOTTOM_SPACE + insets.bottom }]}>
-      <ScreenHeader onBack={onBack} title="Water" />
+      <ScreenHeader onBack={onBack} title={t.water.title} />
 
       {/* Equal spaces above and below keep the bottle and glasses in the middle. */}
       <View style={styles.space} />
@@ -158,7 +160,7 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
 
         <Text style={styles.amount}>
           {formatLitres(progress.millilitres)}
-          <Text style={styles.goal}> of {formatLitres(DAILY_GOAL_ML)}</Text>
+          <Text style={styles.goal}> {t.water.of(formatLitres(DAILY_GOAL_ML))}</Text>
         </Text>
         {/* The slot keeps its height, so the message does not move the glasses. */}
         <View style={styles.goalSlot}>
@@ -166,7 +168,7 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
             <AnimatedText
               style={[styles.goalReached, { transform: [{ scale: goalScale }] }]}
             >
-              Goal reached 🎉
+              {t.water.goalReached}
             </AnimatedText>
           )}
         </View>
@@ -184,8 +186,7 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
       <View style={styles.space} />
 
       <Text style={styles.note}>
-        Tap a glass to add or remove {GLASS_ML} ml. The count starts again every
-        day.
+        {t.water.note(GLASS_ML)}
       </Text>
 
       {lastChange && (
@@ -195,12 +196,12 @@ export default function WaterScreen({ today, onBack, onGlassesChange }: Props) {
         >
           <Text style={styles.undoMessage}>{lastChange.message}</Text>
           <Pressable
-            accessibilityLabel="Undo"
+            accessibilityLabel={t.water.undo}
             accessibilityRole="button"
             hitSlop={12}
             onPress={undo}
           >
-            <Text style={styles.undoText}>Undo</Text>
+            <Text style={styles.undoText}>{t.water.undo}</Text>
           </Pressable>
         </View>
       )}

@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import { DAILY_GOAL_ML, GLASS_ML } from '../water/water';
 
@@ -126,6 +127,7 @@ function Glass({ isFull, waveShift }: GlassProps) {
 // One glass for each 200 ml of the goal: an empty one, with a plus, adds a
 // glass, and a full one takes one away. The count stops at the goal.
 export default function GlassRow({ glasses, isDisabled, onAdd, onRemove }: Props) {
+  const t = useStrings();
   const [wave] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
@@ -164,10 +166,8 @@ export default function GlassRow({ glasses, isDisabled, onAdd, onRemove }: Props
 
           return (
             <Pressable
-              accessibilityHint={isFull ? 'Removes a glass' : 'Adds a glass'}
-              accessibilityLabel={`Glass ${index + 1} of ${GOAL_GLASSES}, ${
-                isFull ? 'full' : 'empty'
-              }`}
+              accessibilityHint={isFull ? t.water.removesGlass : t.water.addsGlass}
+              accessibilityLabel={t.water.glass(index + 1, GOAL_GLASSES, isFull)}
               accessibilityRole="button"
               accessibilityState={{ disabled: isDisabled }}
               disabled={isDisabled}

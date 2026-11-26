@@ -35,6 +35,8 @@ import {
   loadStatsStart,
   loadWaterDays,
 } from '../storage/activityDatabase';
+import { Strings } from '../i18n/en';
+import { useStrings } from '../i18n/LanguageContext';
 import { cardShadow, colors } from '../theme';
 import { DAILY_GOAL_ML, formatLitres } from '../water/water';
 
@@ -44,20 +46,24 @@ const WATER_RING_SIZE = 84;
 
 type Chart = 'activities' | 'water';
 
-const CHART_OPTIONS: { value: Chart; label: string }[] = [
-  { value: 'activities', label: 'Activities' },
-  { value: 'water', label: 'Water' },
-];
+function chartOptions(t: Strings): { value: Chart; label: string }[] {
+  return [
+    { value: 'activities', label: t.stats.activitiesChart },
+    { value: 'water', label: t.stats.waterChart },
+  ];
+}
 
 type Period = 'week' | 'month' | 'all';
 
 // All time has no start, so its chart shows the last 30 days.
 const ALL_TIME_CHART_DAYS = 30;
-const PERIOD_OPTIONS: { value: Period; label: string }[] = [
-  { value: 'week', label: 'This week' },
-  { value: 'month', label: 'This month' },
-  { value: 'all', label: 'All time' },
-];
+function periodOptions(t: Strings): { value: Period; label: string }[] {
+  return [
+    { value: 'week', label: t.stats.thisWeek },
+    { value: 'month', label: t.stats.thisMonth },
+    { value: 'all', label: t.stats.allTime },
+  ];
+}
 
 // The first day counted: this week's Monday or the first of this month, as in
 // the calendar. All time has none.
@@ -72,13 +78,6 @@ function getPeriodFirstDay(period: Period, today: Date): Date | null {
   return null;
 }
 
-const INFO_LINES = [
-  'The period at the top applies to the whole page: this week from Monday, this month from the 1st. The water streak is always the current one.',
-  'Completion rate: activities done out of those due, done or missed. Cancelled days do not count.',
-  'Activities done today count at once; the others count as missed once the day is over.',
-  'Water counts a day once it is over, or as soon as 2 L are reached. Until then the card shows today.',
-  'Deleted activities stay in the stats under All time. Their dates are not kept, so a week or a month counts only the activities still saved.',
-];
 
 type Props = {
   today: Date;
@@ -88,10 +87,6 @@ type Props = {
   onAddWater: () => void;
 };
 
-function days(count: number): string {
-  return `${count} ${count === 1 ? 'day' : 'days'}`;
-}
-
 export default function StatsScreen({
   today,
   activities,
@@ -99,6 +94,7 @@ export default function StatsScreen({
   onAddActivity,
   onAddWater,
 }: Props) {
+  const t = useStrings();
   const insets = useSafeAreaInsets();
   const [keptStats, setKeptStats] = useState<ActivityStats | null>(null);
   const [waterDays, setWaterDays] = useState<WaterDay[] | null>(null);
@@ -143,12 +139,12 @@ export default function StatsScreen({
         isInfoOpen={isInfoOpen}
         onBack={onBack}
         onInfo={() => setIsInfoOpen(!isInfoOpen)}
-        title="Stats"
+        title={t.stats.title}
       />
 
       {isInfoOpen && (
         <View style={[styles.card, styles.infoCard]}>
-          {INFO_LINES.map((line) => (
+          {t.stats.info.map((line) => (
             <Text key={line} style={styles.infoText}>
               {line}
             </Text>
@@ -158,9 +154,9 @@ export default function StatsScreen({
 
       <SegmentedControl
         color={colors.primary}
-        label="Period"
+        label={t.stats.period}
         onChange={setPeriod}
-        options={PERIOD_OPTIONS}
+        options={periodOptions(t)}
         style={styles.periodSelector}
         trackColor={colors.surface}
         value={period}
@@ -199,6 +195,7 @@ function ActivitiesCard({
   stats: ActivityStats;
   onPlan: () => void;
 }) {
+  const t = useStrings();
   const { done, missed } = stats;
   const score = getScore(done, done + missed);
 
@@ -222,26 +219,26 @@ function ActivitiesCard({
           />
         )}
         <View style={styles.activitiesSummary}>
-          <Text style={styles.eyebrow}>ACTIVITIES</Text>
+          <Text style={styles.eyebrow}>{t.stats.activitiesEyebrow}</Text>
           {score === null ? (
             <>
-              <Text style={styles.activitiesEmpty}>Nothing to rate yet</Text>
+              <Text style={styles.activitiesEmpty}>{t.stats.nothingToRate}</Text>
               <Pressable
                 accessibilityRole="button"
                 onPress={onPlan}
                 style={[styles.actionButton, styles.planButton]}
               >
                 <Text style={[styles.actionText, styles.planText]}>
-                  Plan an activity
+                  {t.nextActivity.plan}
                 </Text>
               </Pressable>
             </>
           ) : (
             <>
               <Text style={styles.activitiesCount}>
-                {done} of {done + missed}
+                {t.stats.doneOf(done, done + missed)}
               </Text>
-              <Text style={styles.activitiesLabel}>completed</Text>
+              <Text style={styles.activitiesLabel}>{t.stats.completed}</Text>
             </>
           )}
         </View>
@@ -276,6 +273,7 @@ function StatsContent({
   onAddActivity: () => void;
   onAddWater: () => void;
 }) {
+  const t = useStrings();
   const [chart, setChart] = useState<Chart>('activities');
   const chartDays =
     periodFirstDay === null
@@ -320,23 +318,23 @@ function StatsContent({
               trackColor={colors.waterTrack}
             />
           )}
-          <Text style={styles.waterTitle}>Water</Text>
+          <Text style={styles.waterTitle}>{t.stats.waterChart}</Text>
           {shownWaterScore === null ? (
             <>
-              <Text style={styles.waterCaption}>Not tracked yet</Text>
+              <Text style={styles.waterCaption}>{t.stats.notTrackedYet}</Text>
               <Pressable
                 accessibilityRole="button"
                 onPress={onAddWater}
                 style={[styles.actionButton, styles.waterButton]}
               >
-                <Text style={styles.actionText}>Add water</Text>
+                <Text style={styles.actionText}>{t.stats.addWater}</Text>
               </Pressable>
             </>
           ) : (
             <Text style={styles.waterCaption}>
               {isShowingToday
-                ? `${formatLitres(todayMillilitres ?? 0)} of 2 L today`
-                : `${periodWater.goalDays}/${periodWater.countedDays} days at 2 L`}
+                ? t.stats.waterToday(formatLitres(todayMillilitres ?? 0))
+                : t.stats.daysAtGoal(periodWater.goalDays, periodWater.countedDays)}
             </Text>
           )}
         </View>
@@ -345,15 +343,16 @@ function StatsContent({
           <View style={styles.flameCircle}>
             <Ionicons name="flame" size={26} color={colors.surface} />
           </View>
-          <Text style={styles.streakLabel}>Water streak</Text>
-          <Text style={styles.streakValue}>{days(water.currentStreak)}</Text>
+          <Text style={styles.streakLabel}>{t.stats.waterStreak}</Text>
+          <Text style={styles.streakValue}>{t.stats.days(water.currentStreak)}</Text>
           {/* The last 7 days, from the oldest on the left to today. */}
           <View
-            accessibilityLabel={`${
+            accessibilityLabel={t.stats.lastDaysAtGoal(
               lastWeek.filter(
                 ({ millilitres }) => (millilitres ?? 0) >= DAILY_GOAL_ML,
-              ).length
-            } of the last ${RECENT_DAYS} days at 2 L`}
+              ).length,
+              RECENT_DAYS,
+            )}
             accessible
             style={styles.weekDots}
           >
@@ -378,7 +377,7 @@ function StatsContent({
                     index === lastWeek.length - 1 && styles.todayWeekDay,
                   ]}
                 >
-                  {weekdayOf(date).charAt(0)}
+                  {weekdayOf(date, t).charAt(0)}
                 </Text>
               </View>
             ))}
@@ -389,14 +388,14 @@ function StatsContent({
       <View style={[styles.card, styles.chartCard]}>
         <SegmentedControl
           color={chartColor}
-          label="Chart"
+          label={t.stats.chart}
           onChange={setChart}
-          options={CHART_OPTIONS}
+          options={chartOptions(t)}
           value={chart}
         />
         <View style={styles.legendRow}>
           <UntrackedLegend
-            label={chart === 'activities' ? 'Nothing planned' : 'Not tracked'}
+            label={chart === 'activities' ? t.charts.nothingPlanned : t.charts.notTracked}
           />
         </View>
         {chart === 'activities' ? (

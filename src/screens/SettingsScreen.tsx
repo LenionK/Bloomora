@@ -16,9 +16,19 @@ import {
   getOldActivities,
   toDateKey,
 } from '../calendar/activities';
-import { formatTimeInput, formatTimeOfDay, parseTime } from '../calendar/time';
+import { ImportedActivity, parseIcs, withoutDuplicates } from '../calendar/ics';
+import { isCalendarText, pickCalendarFile } from '../calendar/icsFile';
+import {
+  formatDuration,
+  formatTimeInput,
+  formatTimeOfDay,
+  parseTime,
+} from '../calendar/time';
 import ChoiceChips from '../components/ChoiceChips';
 import ConfirmModal from '../components/ConfirmModal';
+import { Strings } from '../i18n/en';
+import { LanguageSetting } from '../i18n/language';
+import { useLanguageSetting, useStrings } from '../i18n/LanguageContext';
 import { ReminderSettings } from '../notifications/reminders';
 import {
   getReminderStatus,
@@ -35,34 +45,42 @@ import {
 import { formatBytes } from '../storage/formatBytes';
 import { colors } from '../theme';
 
-const CLEANUP_OPTIONS: { period: CleanupPeriod; label: string }[] = [
-  { period: 'week', label: 'Older than a week' },
-  { period: 'month', label: 'Older than a month' },
-  { period: 'year', label: 'Older than a year' },
-];
+const CLEANUP_PERIODS: CleanupPeriod[] = ['week', 'month', 'year'];
+const LEAD_MINUTES = [null, 0, 5, 10, 30, 60];
+const WATER_INTERVALS = [null, 60, 120, 180];
+const LANGUAGE_SETTINGS: LanguageSetting[] = ['system', 'en', 'it'];
 
-const LEAD_OPTIONS = [
-  { value: null, label: 'Off' },
-  { value: 0, label: 'At start' },
-  { value: 5, label: '5 min' },
-  { value: 10, label: '10 min' },
-  { value: 30, label: '30 min' },
-  { value: 60, label: '1 h' },
-];
+function leadOptions(t: Strings) {
+  return LEAD_MINUTES.map((value) => ({
+    value,
+    label:
+      value === null
+        ? t.settings.off
+        : value === 0
+          ? t.settings.atStart
+          : formatDuration(value),
+  }));
+}
 
-const WATER_INTERVAL_OPTIONS = [
-  { value: null, label: 'Off' },
-  { value: 60, label: '1 h' },
-  { value: 120, label: '2 h' },
-  { value: 180, label: '3 h' },
-];
+function waterIntervalOptions(t: Strings) {
+  return WATER_INTERVALS.map((value) => ({
+    value,
+    label: value === null ? t.settings.off : formatDuration(value),
+  }));
+}
 
 type Props = {
   today: Date;
   activities: Activity[];
   onBack: () => void;
   onDeleteOld: (activities: Activity[]) => void;
+  onImport: (activities: ImportedActivity[]) => void;
   onRemindersChange: () => Promise<void>;
+};
+
+type ImportPreview = {
+  activities: ImportedActivity[];
+  message: string;
 };
 
 function toTimeText(minutes: number): string {
@@ -74,8 +92,12 @@ export default function SettingsScreen({
   activities,
   onBack,
   onDeleteOld,
+  onImport,
   onRemindersChange,
 }: Props) {
+  const t = useStrings();
+  const { setting: languageSetting, changeSetting: changeLanguage } =
+    useLanguageSetting();
   const insets = useSafeAreaInsets();
   const [databaseSize, setDatabaseSize] = useState<number | null>(null);
   const [activitiesToDelete, setActivitiesToDelete] = useState<
@@ -88,6 +110,8 @@ export default function SettingsScreen({
   const [isTestSent, setIsTestSent] = useState(false);
   const [isResetOpen, setIsResetOpen] = useState(false);
   const [isReset, setIsReset] = useState(false);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
 
   function loadStatus() {
     getReminderStatus().then(setStatus).catch(console.error);
@@ -144,6 +168,52 @@ export default function SettingsScreen({
       .catch(console.error);
   }
 
+  async function chooseCalendarFile() {
+    setImportStatus(null);
+
+    let text: string | null;
+    try {
+      text = await pickCalendarFile();
+    } catch (error) {
+      console.error(error);
+      setImportStatus(t.settings.importUnreadable);
+      return;
+    }
+    if (text === null) return;
+    if (!isCalendarText(text)) {
+      setImportStatus(t.settings.importNotCalendar);
+      return;
+    }
+
+    const parsed = parseIcs(text, today, colors.primary, t.activity.untitled);
+    const { activities: newActivities, duplicates } = withoutDuplicates(
+      parsed.activities,
+      activities,
+    );
+    const leftOut = t.settings.importLeftOut(
+      parsed.past,
+      duplicates,
+      parsed.unsupported,
+    );
+
+    if (newActivities.length === 0) {
+      setImportStatus(`${t.settings.importNothingNew}${leftOut}`);
+      return;
+    }
+    setImportPreview({
+      activities: newActivities,
+      message: `${t.settings.importMessage}${leftOut}`,
+    });
+  }
+
+  // The notifications are planned again, so they arrive in the new language.
+  function chooseLanguage(setting: LanguageSetting) {
+    if (setting === languageSetting) return;
+
+    changeLanguage(setting);
+    onRemindersChange().then(loadStatus).catch(console.error);
+  }
+
   // A wrong or reversed range goes back to the saved one instead of being kept.
   function completeWaterHours() {
     if (!reminders) return;
@@ -182,46 +252,60 @@ export default function SettingsScreen({
     >
       <View style={styles.topBar}>
         <Pressable
-          accessibilityLabel="Back to calendar"
+          accessibilityLabel={t.common.backToCalendar}
           accessibilityRole="button"
           onPress={onBack}
           style={styles.backButton}
         >
           <Ionicons name="chevron-back" size={18} color={colors.primary} />
-          <Text style={styles.backText}>Calendar</Text>
+          <Text style={styles.backText}>{t.settings.calendar}</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.title}>Settings</Text>
+      <Text style={styles.title}>{t.settings.title}</Text>
 
-      <Text style={styles.sectionTitle}>Notifications</Text>
+      <Text style={styles.sectionTitle}>{t.settings.language}</Text>
+      <View style={[styles.card, styles.notificationsCard]}>
+        <ChoiceChips
+          label={t.settings.language}
+          onChange={chooseLanguage}
+          options={LANGUAGE_SETTINGS.map((value) => ({
+            value,
+            label: t.settings.languageOptions[value],
+          }))}
+          value={languageSetting}
+        />
+      </View>
+      <Text style={styles.note}>{t.settings.languageNote}</Text>
+
+      <Text style={styles.sectionTitle}>{t.settings.notifications}</Text>
       <View style={[styles.card, styles.notificationsCard]}>
         {reminders === null ? (
           <Text style={styles.rowText}>…</Text>
         ) : (
           <>
-            <Text style={styles.fieldLabel}>Before activities</Text>
+            <Text style={styles.fieldLabel}>{t.settings.beforeActivities}</Text>
             <ChoiceChips
-              label="Before activities"
+              label={t.settings.beforeActivities}
               onChange={(value) => changeReminders({ activityLeadMinutes: value })}
-              options={LEAD_OPTIONS}
+              options={leadOptions(t)}
               value={reminders.activityLeadMinutes}
             />
 
             <Text style={[styles.fieldLabel, styles.nextField]}>
-              Drink reminders
+              {t.settings.drinkReminders}
             </Text>
             <ChoiceChips
-              label="Drink reminders"
+              label={t.settings.drinkReminders}
               onChange={(value) => changeReminders({ waterIntervalMinutes: value })}
-              options={WATER_INTERVAL_OPTIONS}
+              options={waterIntervalOptions(t)}
               value={reminders.waterIntervalMinutes}
             />
             {reminders.waterIntervalMinutes !== null && (
               <View style={styles.timeRow}>
-                <Text style={styles.rowText}>From</Text>
+                <Text style={styles.rowText}>{t.settings.from}</Text>
                 <TextInput
-                  accessibilityLabel="Drink reminders from"
+                  accessibilityLabel={t.settings.drinkFrom}
                   keyboardType="number-pad"
                   onBlur={completeWaterHours}
                   onChangeText={(text) => setStartText(formatTimeInput(text))}
@@ -229,9 +313,9 @@ export default function SettingsScreen({
                   style={styles.timeInput}
                   value={startText}
                 />
-                <Text style={styles.rowText}>to</Text>
+                <Text style={styles.rowText}>{t.settings.to}</Text>
                 <TextInput
-                  accessibilityLabel="Drink reminders to"
+                  accessibilityLabel={t.settings.drinkTo}
                   keyboardType="number-pad"
                   onBlur={completeWaterHours}
                   onChangeText={(text) => setEndText(formatTimeInput(text))}
@@ -246,52 +330,62 @@ export default function SettingsScreen({
       </View>
       <View style={[styles.card, styles.statusCard]}>
         {status && !status.isAllowed && (
-          <Text style={styles.warning}>
-            Notifications are not allowed. Allow them for this app in the phone
-            settings.
-          </Text>
+          <Text style={styles.warning}>{t.settings.notAllowed}</Text>
         )}
         <View style={styles.row}>
-          <Text style={styles.rowText}>Planned reminders</Text>
+          <Text style={styles.rowText}>{t.settings.plannedReminders}</Text>
           <Text style={styles.rowValue}>
             {status === null ? '…' : status.plannedCount}
           </Text>
         </View>
         <Pressable
-          accessibilityLabel="Send a test notification"
+          accessibilityLabel={t.settings.sendTest}
           accessibilityRole="button"
           onPress={sendTest}
           style={styles.row}
         >
           <Text style={styles.actionText}>
-            {isTestSent
-              ? `Test sent, it arrives in ${TEST_DELAY_SECONDS} seconds`
-              : 'Send a test notification'}
+            {isTestSent ? t.settings.testSent(TEST_DELAY_SECONDS) : t.settings.sendTest}
           </Text>
         </Pressable>
       </View>
-      <Text style={styles.note}>
-        Reminders are planned a week ahead. Open the app at least once a week to
-        keep them coming. Drink reminders stop for the day at 2 L.
-      </Text>
+      <Text style={styles.note}>{t.settings.remindersNote}</Text>
 
-      <Text style={styles.sectionTitle}>Storage</Text>
+      <Text style={styles.sectionTitle}>{t.settings.import}</Text>
+      <View style={styles.card}>
+        <Pressable
+          accessibilityLabel={t.settings.importButton}
+          accessibilityRole="button"
+          onPress={() => {
+            chooseCalendarFile();
+          }}
+          style={styles.row}
+        >
+          <Text style={styles.actionText}>{t.settings.importButton}</Text>
+          <Ionicons name="download-outline" size={20} color={colors.primary} />
+        </Pressable>
+        {importStatus && <Text style={styles.importStatus}>{importStatus}</Text>}
+      </View>
+      <Text style={styles.note}>{t.settings.importNote}</Text>
+
+      <Text style={styles.sectionTitle}>{t.settings.storage}</Text>
       <View style={styles.card}>
         <View style={styles.row}>
-          <Text style={styles.rowText}>Space used</Text>
+          <Text style={styles.rowText}>{t.settings.spaceUsed}</Text>
           <Text style={styles.rowValue}>
             {databaseSize === null ? '…' : formatBytes(databaseSize)}
           </Text>
         </View>
         <View style={styles.row}>
-          <Text style={styles.rowText}>Activities</Text>
-          <Text style={styles.rowValue}>{activities.length} saved</Text>
+          <Text style={styles.rowText}>{t.settings.activities}</Text>
+          <Text style={styles.rowValue}>{t.settings.saved(activities.length)}</Text>
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Delete old activities</Text>
+      <Text style={styles.sectionTitle}>{t.settings.deleteOld}</Text>
       <View style={styles.card}>
-        {CLEANUP_OPTIONS.map(({ period, label }) => {
+        {CLEANUP_PERIODS.map((period) => {
+          const label = t.settings.olderThan[period];
           const oldActivities = getOldActivities(
             activities,
             getCleanupCutoff(period, today),
@@ -318,31 +412,26 @@ export default function SettingsScreen({
           );
         })}
       </View>
-      <Text style={styles.note}>
-        Repeating activities are always kept. Delete them from their day.
-      </Text>
+      <Text style={styles.note}>{t.settings.deleteOldNote}</Text>
 
-      <Text style={styles.sectionTitle}>Stats</Text>
+      <Text style={styles.sectionTitle}>{t.settings.stats}</Text>
       <View style={styles.card}>
         <Pressable
-          accessibilityLabel="Reset stats"
+          accessibilityLabel={t.settings.resetStats}
           accessibilityRole="button"
           onPress={() => setIsResetOpen(true)}
           style={styles.row}
         >
-          <Text style={styles.actionText}>Reset stats</Text>
-          {isReset && <Text style={styles.rowValue}>Reset today</Text>}
+          <Text style={styles.actionText}>{t.settings.resetStats}</Text>
+          {isReset && <Text style={styles.rowValue}>{t.settings.resetToday}</Text>}
         </Pressable>
       </View>
-      <Text style={styles.note}>
-        Stats start again from today and the water history is deleted. Your
-        activities and the calendar stay as they are.
-      </Text>
+      <Text style={styles.note}>{t.settings.resetNote}</Text>
 
       {isResetOpen && (
         <ConfirmModal
-          confirmLabel="Reset"
-          message="Water history and activity scores start again from today. This cannot be undone."
+          confirmLabel={t.settings.reset}
+          message={t.settings.resetMessage}
           onClose={() => setIsResetOpen(false)}
           onConfirm={() => {
             setIsResetOpen(false);
@@ -353,22 +442,34 @@ export default function SettingsScreen({
               })
               .catch(console.error);
           }}
-          title="Reset all stats?"
+          title={t.settings.resetTitle}
+        />
+      )}
+
+      {importPreview && (
+        <ConfirmModal
+          confirmLabel={t.settings.importConfirm}
+          message={importPreview.message}
+          onClose={() => setImportPreview(null)}
+          onConfirm={() => {
+            onImport(importPreview.activities);
+            setImportStatus(t.settings.imported(importPreview.activities.length));
+            setImportPreview(null);
+          }}
+          title={t.settings.importTitle(importPreview.activities.length)}
         />
       )}
 
       {activitiesToDelete && (
         <ConfirmModal
-          confirmLabel="Delete"
-          message="This cannot be undone."
+          confirmLabel={t.common.delete}
+          message={t.settings.cannotBeUndone}
           onClose={() => setActivitiesToDelete(null)}
           onConfirm={() => {
             onDeleteOld(activitiesToDelete);
             setActivitiesToDelete(null);
           }}
-          title={`Delete ${activitiesToDelete.length} old ${
-            activitiesToDelete.length === 1 ? 'activity' : 'activities'
-          }?`}
+          title={t.settings.deleteOldTitle(activitiesToDelete.length)}
         />
       )}
     </ScrollView>
@@ -471,6 +572,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontWeight: 'normal',
+    color: colors.textSecondary,
+  },
+  importStatus: {
+    marginTop: -4,
+    marginBottom: 14,
     color: colors.textSecondary,
   },
   note: {
