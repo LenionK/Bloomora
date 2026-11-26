@@ -404,10 +404,12 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 16,
-    fontSize: 40,
-    lineHeight: 44,
+    fontSize: 34,
+    lineHeight: 40,
     includeFontPadding: false,
     fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
     color: colors.text,
   },
   sectionTitle: {
