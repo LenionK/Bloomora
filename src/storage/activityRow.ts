@@ -9,6 +9,7 @@ export type ActivityRow = {
   repeat_days: string;
   completed_dates: string;
   skipped_dates: string;
+  description: string;
 };
 
 export function activityToRow(activity: Activity): ActivityRow {
@@ -21,6 +22,7 @@ export function activityToRow(activity: Activity): ActivityRow {
     repeat_days: JSON.stringify(activity.repeatDays),
     completed_dates: JSON.stringify(activity.completedDates),
     skipped_dates: JSON.stringify(activity.skippedDates),
+    description: activity.description ?? '',
   };
 }
 
@@ -34,5 +36,6 @@ export function rowToActivity(row: ActivityRow): Activity {
     repeatDays: JSON.parse(row.repeat_days),
     completedDates: JSON.parse(row.completed_dates),
     skippedDates: JSON.parse(row.skipped_dates),
+    description: row.description ?? '',
   };
 }

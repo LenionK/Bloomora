@@ -10,6 +10,7 @@ const activity: Activity = {
   repeatDays: [0, 2],
   completedDates: ['2026-11-02'],
   skippedDates: ['2026-11-09'],
+  description: 'Leg day',
 };
 
 test('stores dates as numbers and lists as text', () => {
@@ -23,4 +24,12 @@ test('stores dates as numbers and lists as text', () => {
 test('gets back the same activity from its row', () => {
   // An activity saved and read back must stay identical.
   expect(rowToActivity(activityToRow(activity))).toEqual(activity);
+});
+
+test('saves an empty description for an activity without one', () => {
+  // Activities created before descriptions existed have none.
+  const { description, ...withoutDescription } = activity;
+
+  expect(description).toBe('Leg day');
+  expect(activityToRow(withoutDescription).description).toBe('');
 });

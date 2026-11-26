@@ -147,7 +147,34 @@ test('ends 30 minutes after the start by default', async () => {
     end: new Date(2026, 10, 15, 17, 0),
     color: colors.primary,
     repeatDays: [],
+    description: '',
   });
+});
+
+test('adds an optional description, without the spaces around it', async () => {
+  // The description is saved with the activity, and shown again when editing.
+  const onAdd = jest.fn();
+  await renderModal(onAdd);
+
+  await type('Activity title', 'Dentist');
+  await type('Activity description', '  Bring the X-rays  ');
+  await type('Start time', '1630');
+  await fireEvent.press(screen.getByText('Add'));
+
+  expect(onAdd).toHaveBeenCalledWith(
+    expect.objectContaining({ description: 'Bring the X-rays' }),
+  );
+  await screen.unmount();
+
+  await render(
+    <AddActivityModal
+      activityToEdit={onAdd.mock.calls[0][0]}
+      date={date}
+      onAdd={jest.fn()}
+      onClose={jest.fn()}
+    />,
+  );
+  expect(valueOf('Activity description')).toBe('Bring the X-rays');
 });
 
 test('happens once by default and repeats on the selected days', async () => {

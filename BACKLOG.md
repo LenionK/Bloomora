@@ -16,3 +16,6 @@
 | US-12 | As a user, I want a notification before my activities, 10 minutes by default, with the time changeable in the settings. | Done |
 | US-13 | As a user, I want reminders to drink every 2 hours, stopping at 2 litres, with start, end and interval changeable in the settings. | Done |
 | US-14 | As a user, I want a stats screen with my water streak, my activities done, skipped and missed, and a score for each, kept even after deleting old activities. | Done |
+| US-15 | As a user, I want to add an optional description to an activity and see it under its title in the day. | Done |
+| US-16 | As a user, I want to import the events of an `.ics` file from today on, with unsupported repeats as single dates for 3 months and all-day events at 9:00–9:30. | To do |
+| US-17 | As a user, I want a dark theme that follows the phone, with a System, Light or Dark choice in the settings. | To do |
