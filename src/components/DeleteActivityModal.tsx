@@ -1,21 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Pressable from './Pressable';
 import { Text } from './AppText';
 import { Activity, getUpcomingDates, toDateKey } from '../calendar/activities';
 import { Strings } from '../i18n/en';
 import { shortWeekday } from '../i18n/dates';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
-import Logo from './Logo';
+import { colors, fontSizes, MIN_TOUCH_SIZE } from '../theme';
+import Button from './Button';
+import ModalShell from './ModalShell';
 
 const UPCOMING_DATES = 8;
 const OPTIONS = ['day', 'someDays', 'all'] as const;
+const DATE_CHIP_HEIGHT = 40;
 
 type DeleteOption = (typeof OPTIONS)[number];
 
@@ -45,10 +43,12 @@ export default function DeleteActivityModal({
   const isRepeating = activity.repeatDays.length > 0;
   const [option, setOption] = useState<DeleteOption>('day');
   const [selectedKeys, setSelectedKeys] = useState([dateKey]);
+  const [hasNoDaysError, setHasNoDaysError] = useState(false);
 
   const canConfirm = option !== 'someDays' || selectedKeys.length > 0;
 
   function toggleKey(key: string) {
+    setHasNoDaysError(false);
     setSelectedKeys(
       selectedKeys.includes(key)
         ? selectedKeys.filter((selectedKey) => selectedKey !== key)
@@ -56,147 +56,104 @@ export default function DeleteActivityModal({
     );
   }
 
+  // Delete stays pressable: with no day chosen it says what is missing.
   function confirm() {
-    if (!canConfirm) return;
+    if (!canConfirm) {
+      setHasNoDaysError(true);
+      return;
+    }
 
     if (!isRepeating || option === 'all') onDeleteAll();
     else onSkipDates(option === 'day' ? [dateKey] : selectedKeys);
   }
 
   return (
-    <Modal onRequestClose={onClose} transparent>
-      <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <View style={styles.header}>
-            <View style={styles.titles}>
-              <Text
-                numberOfLines={2}
-                style={[styles.title, { color: activity.color }]}
-              >
-                {t.deleteActivity.title(activity.title)}
-              </Text>
-              <Text style={styles.date}>{formatShortDate(date, t)}</Text>
-            </View>
-            <Logo color={activity.color} size={44} />
-          </View>
+    <ModalShell
+      actions={
+        <>
+          <Button
+            color={activity.color}
+            label={t.common.cancel}
+            onPress={onClose}
+            variant="text"
+          />
+          <Button
+            color={colors.danger}
+            label={t.common.delete}
+            onPress={confirm}
+          />
+        </>
+      }
+      color={activity.color}
+      onClose={onClose}
+      subtitle={formatShortDate(date, t)}
+      title={t.deleteActivity.title(activity.title)}
+      titleLines={2}
+    >
+      {isRepeating &&
+        OPTIONS.map((value) => (
+          <Pressable
+            accessibilityRole="radio"
+            accessibilityState={{ checked: option === value }}
+            key={value}
+            onPress={() => setOption(value)}
+            style={styles.option}
+          >
+            <Ionicons
+              name={option === value ? 'radio-button-on' : 'radio-button-off'}
+              size={22}
+              color={activity.color}
+            />
+            <Text style={styles.optionText}>{t.deleteActivity.options[value]}</Text>
+          </Pressable>
+        ))}
 
-          {isRepeating &&
-            OPTIONS.map((value) => (
+      {isRepeating && option === 'someDays' && (
+        <View style={styles.dates}>
+          {getUpcomingDates(activity, date, UPCOMING_DATES).map((upcomingDate) => {
+            const key = toDateKey(upcomingDate);
+            const isSelected = selectedKeys.includes(key);
+
+            return (
               <Pressable
-                accessibilityRole="radio"
-                accessibilityState={{ checked: option === value }}
-                key={value}
-                onPress={() => setOption(value)}
-                style={styles.option}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isSelected }}
+                hitSlop={(MIN_TOUCH_SIZE - DATE_CHIP_HEIGHT) / 2}
+                key={key}
+                onPress={() => toggleKey(key)}
+                style={[
+                  styles.dateChip,
+                  isSelected && { backgroundColor: activity.color },
+                ]}
               >
-                <Ionicons
-                  name={
-                    option === value
-                      ? 'radio-button-on'
-                      : 'radio-button-off'
-                  }
-                  size={22}
-                  color={activity.color}
-                />
-                <Text style={styles.optionText}>{t.deleteActivity.options[value]}</Text>
+                <Text style={[styles.dateText, isSelected && styles.selectedDateText]}>
+                  {formatShortDate(upcomingDate, t)}
+                </Text>
               </Pressable>
-            ))}
-
-          {isRepeating && option === 'someDays' && (
-            <View style={styles.dates}>
-              {getUpcomingDates(activity, date, UPCOMING_DATES).map(
-                (upcomingDate) => {
-                  const key = toDateKey(upcomingDate);
-                  const isSelected = selectedKeys.includes(key);
-
-                  return (
-                    <Pressable
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: isSelected }}
-                      key={key}
-                      onPress={() => toggleKey(key)}
-                      style={[
-                        styles.dateChip,
-                        isSelected && { backgroundColor: activity.color },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.dateText,
-                          isSelected && styles.selectedDateText,
-                        ]}
-                      >
-                        {formatShortDate(upcomingDate, t)}
-                      </Text>
-                    </Pressable>
-                  );
-                },
-              )}
-            </View>
-          )}
-
-          <View style={styles.actions}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onClose}
-              style={styles.button}
-            >
-              <Text style={{ color: activity.color }}>{t.common.cancel}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !canConfirm }}
-              onPress={confirm}
-              style={[
-                styles.button,
-                { backgroundColor: activity.color },
-                !canConfirm && styles.disabledButton,
-              ]}
-            >
-              <Text style={styles.confirmText}>{t.common.delete}</Text>
-            </Pressable>
-          </View>
+            );
+          })}
         </View>
-      </View>
-    </Modal>
+      )}
+
+      {hasNoDaysError && (
+        <Text
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+          style={styles.errorText}
+        >
+          {t.deleteActivity.noDaysError}
+        </Text>
+      )}
+    </ModalShell>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    paddingTop: 72,
-    paddingHorizontal: 16,
-    backgroundColor: colors.backdrop,
-  },
-  card: {
-    padding: 20,
-    borderRadius: 24,
-    backgroundColor: colors.surface,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 8,
-  },
-  titles: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  date: {
-    marginTop: 4,
-    color: colors.textSecondary,
-  },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    height: 44,
+    minHeight: MIN_TOUCH_SIZE,
   },
   optionText: {
     color: colors.text,
@@ -212,33 +169,20 @@ const styles = StyleSheet.create({
     flexBasis: '45%',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 40,
-    borderRadius: 20,
+    height: DATE_CHIP_HEIGHT,
+    borderRadius: DATE_CHIP_HEIGHT / 2,
     backgroundColor: colors.background,
+  },
+  errorText: {
+    marginTop: 8,
+    fontSize: fontSizes.caption,
+    color: colors.danger,
   },
   dateText: {
     color: colors.text,
   },
   selectedDateText: {
     fontWeight: 'bold',
-    color: colors.surface,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 16,
-  },
-  button: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  disabledButton: {
-    opacity: 0.4,
-  },
-  confirmText: {
-    fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
 });

@@ -2,13 +2,13 @@ import { StyleSheet, View } from 'react-native';
 import { useStrings } from '../i18n/LanguageContext';
 import { Text } from './AppText';
 import { ActivityStats, getScore } from '../stats/stats';
-import { colors } from '../theme';
+import { colors, fontSizes, radii } from '../theme';
 
 // Drawn on the primary colour of the activities card.
 const PARTS = [
-  { key: 'done', color: colors.surface },
-  { key: 'missed', color: colors.primaryLight },
-  { key: 'skipped', color: colors.primaryDark },
+  { key: 'done', color: colors.onColor },
+  { key: 'missed', color: colors.onPrimaryMuted },
+  { key: 'skipped', color: colors.onPrimaryStrong },
 ] as const;
 
 type Props = {
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     height: 12,
   },
   part: {
-    borderRadius: 6,
+    borderRadius: radii.small,
   },
   legend: {
     flexDirection: 'row',
@@ -66,16 +66,19 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
+  // A white outline keeps the darker and lighter dots visible on the primary.
   dot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: colors.onColor,
   },
   legendText: {
-    fontSize: 13,
+    fontSize: fontSizes.label,
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
 });

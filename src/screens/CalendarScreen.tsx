@@ -24,7 +24,7 @@ import {
   saveActivity,
 } from '../storage/activityDatabase';
 import { getActivityStats } from '../stats/stats';
-import { colors } from '../theme';
+import { colors, SCREEN_TOP } from '../theme';
 import DayScreen from './DayScreen';
 import SettingsScreen from './SettingsScreen';
 import StatsScreen from './StatsScreen';
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 56,
+    paddingTop: SCREEN_TOP,
     backgroundColor: colors.background,
   },
   nextActivity: {

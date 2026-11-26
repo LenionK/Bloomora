@@ -1,6 +1,14 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Pressable from './Pressable';
 import { Text } from './AppText';
-import { colors } from '../theme';
+import { colors, MIN_TOUCH_SIZE } from '../theme';
+
+const CHIP_HEIGHT = 36;
+// Taps above and below the chip count too, up to 48 points.
+const CHIP_TAP_SPACE = {
+  top: (MIN_TOUCH_SIZE - CHIP_HEIGHT) / 2,
+  bottom: (MIN_TOUCH_SIZE - CHIP_HEIGHT) / 2,
+};
 
 type Option<T> = {
   value: T;
@@ -30,6 +38,7 @@ export default function ChoiceChips<T extends string | number | null>({
             accessibilityLabel={`${label}: ${option.label}`}
             accessibilityRole="radio"
             accessibilityState={{ checked: isSelected }}
+            hitSlop={CHIP_TAP_SPACE}
             key={String(option.value)}
             onPress={() => onChange(option.value)}
             style={[styles.chip, isSelected && styles.selectedChip]}
@@ -50,11 +59,12 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
+  // A larger phone text makes the chip grow instead of cutting its label.
   chip: {
-    height: 36,
+    minHeight: CHIP_HEIGHT,
     justifyContent: 'center',
-    paddingHorizontal: 14,
-    borderRadius: 18,
+    paddingHorizontal: 16,
+    borderRadius: CHIP_HEIGHT / 2,
     backgroundColor: colors.background,
   },
   selectedChip: {
@@ -65,6 +75,6 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
 });

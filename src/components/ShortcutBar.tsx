@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { cardShadow, colors } from '../theme';
+import { StyleSheet, View } from 'react-native';
+import Pressable from './Pressable';
+import { cardShadow, colors, radii } from '../theme';
 
 type Shortcut = {
   label: string;
@@ -27,7 +28,7 @@ export default function ShortcutBar({ shortcuts }: Props) {
         >
           {isMain ? (
             <View style={styles.mainButton}>
-              <Ionicons name={icon} size={28} color={colors.surface} />
+              <Ionicons name={icon} size={28} color={colors.onColor} />
             </View>
           ) : (
             <Ionicons name={icon} size={26} color={colors.primary} />
@@ -41,7 +42,7 @@ export default function ShortcutBar({ shortcuts }: Props) {
 const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    borderRadius: 24,
+    borderRadius: radii.card,
     backgroundColor: colors.surface,
     ...cardShadow,
   },

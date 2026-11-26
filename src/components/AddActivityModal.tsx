@@ -1,11 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import {
-  Keyboard,
-  Modal,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Keyboard, StyleSheet, View } from 'react-native';
 import { Text, TextInput, TextInputRef } from './AppText';
 import { formatDayMonth, shortWeekday } from '../i18n/dates';
 import { useStrings } from '../i18n/LanguageContext';
@@ -17,10 +11,16 @@ import {
   parseTimeRange,
   TimeOfDay,
 } from '../calendar/time';
-import { colors } from '../theme';
+import { colors, fontSizes } from '../theme';
 import ColorPicker from './ColorPicker';
 import DateInput from './DateInput';
-import Logo from './Logo';
+import {
+  clearActivityDraft,
+  loadActivityDraft,
+  saveActivityDraft,
+} from './activityDraft';
+import Button from './Button';
+import ModalShell from './ModalShell';
 import RepeatPicker from './RepeatPicker';
 
 export type NewActivity = {
@@ -51,24 +51,51 @@ export default function AddActivityModal({
   onClose,
 }: Props) {
   const t = useStrings();
+  // A new activity starts from what was left unsaved last time, if anything.
+  const [draft] = useState(() => (activityToEdit ? null : loadActivityDraft()));
   const [date, setDate] = useState<Date | null>(initialDate);
   const [hasDateError, setHasDateError] = useState(false);
-  const [title, setTitle] = useState(activityToEdit?.title ?? '');
+  const [title, setTitle] = useState(activityToEdit?.title ?? draft?.title ?? '');
   const [description, setDescription] = useState(
-    activityToEdit?.description ?? '',
+    activityToEdit?.description ?? draft?.description ?? '',
   );
   const [startText, setStartText] = useState(
-    activityToEdit ? formatTime(activityToEdit.start) : '',
+    activityToEdit ? formatTime(activityToEdit.start) : (draft?.startText ?? ''),
   );
   const [typedEndText, setTypedEndText] = useState<string | null>(
-    activityToEdit ? formatTime(activityToEdit.end) : null,
+    activityToEdit ? formatTime(activityToEdit.end) : (draft?.typedEndText ?? null),
   );
-  const [color, setColor] = useState(activityToEdit?.color ?? colors.primary);
+  const [color, setColor] = useState(
+    activityToEdit?.color ?? draft?.color ?? colors.primary,
+  );
   const [repeatDays, setRepeatDays] = useState<number[]>(
-    activityToEdit?.repeatDays ?? [],
+    activityToEdit?.repeatDays ?? draft?.repeatDays ?? [],
   );
   const [hasTimeError, setHasTimeError] = useState(false);
   const startInputRef = useRef<TextInputRef>(null);
+
+  // Every change of a new activity is kept, so closing by mistake loses nothing.
+  useEffect(() => {
+    if (activityToEdit) return;
+    const isEmpty =
+      title === '' &&
+      description === '' &&
+      startText === '' &&
+      typedEndText === null &&
+      repeatDays.length === 0 &&
+      color === colors.primary;
+
+    saveActivityDraft(
+      isEmpty
+        ? null
+        : { title, description, startText, typedEndText, color, repeatDays },
+    );
+  }, [activityToEdit, color, description, repeatDays, startText, title, typedEndText]);
+
+  function cancel() {
+    if (!activityToEdit) clearActivityDraft();
+    onClose();
+  }
 
   const endText = typedEndText ?? getDefaultEndText(startText);
   // The weekday helps only when the day is being chosen here.
@@ -95,9 +122,32 @@ export default function AddActivityModal({
     setHasTimeError(false);
   }
 
-  function completeEnd() {
-    if (typedEndText !== null) setTypedEndText(completeTimeInput(typedEndText));
+  // Times are checked once a field is left, never while typing.
+  function checkTimes(start: string, end: string) {
+    if (start !== '' && end !== '' && !parseTimeRange(start, end)) {
+      setHasTimeError(true);
+    }
   }
+
+  function completeStart() {
+    const completed = completeTimeInput(startText);
+
+    setStartText(completed);
+    if (typedEndText !== null) checkTimes(completed, completeTimeInput(typedEndText));
+  }
+
+  function completeEnd() {
+    if (typedEndText === null) return;
+
+    const completed = completeTimeInput(typedEndText);
+    setTypedEndText(completed);
+    checkTimes(completeTimeInput(startText), completed);
+  }
+
+  // A date left wrong or incomplete shows its error at once.
+  const checkDate = useCallback(() => {
+    if (!date) setHasDateError(true);
+  }, [date]);
 
   function toDate(day: Date, time: TimeOfDay) {
     return new Date(
@@ -124,6 +174,7 @@ export default function AddActivityModal({
       return;
     }
 
+    if (!activityToEdit) clearActivityDraft();
     onAdd({
       title: trimmedTitle,
       start: toDate(date, timeRange.start),
@@ -135,162 +186,127 @@ export default function AddActivityModal({
   }
 
   return (
-    <Modal onRequestClose={onClose} transparent>
-      {/* A tap outside the fields closes the keyboard, on the card or around it. */}
-      <Pressable
-        accessible={false}
-        onPress={Keyboard.dismiss}
-        style={styles.backdrop}
-        testID="add-activity-backdrop"
-      >
-        <View style={styles.card}>
-          <View style={styles.header}>
-            <View>
-              <Text style={[styles.title, { color }]}>
-                {activityToEdit ? t.addActivity.editTitle : t.addActivity.newTitle}
-              </Text>
-              <Text style={styles.date}>
-                {activityToEdit && repeatDays.length > 0 && t.addActivity.from}
-                {dateLabel}
-              </Text>
-            </View>
-            <Logo color={color} size={44} />
-          </View>
-          {firstSelectableDate && (
-            <DateInput
-              firstDate={firstSelectableDate}
-              initialDate={initialDate}
-              onChange={changeDate}
-            />
-          )}
-          {firstSelectableDate && hasDateError && (
-            <Text style={[styles.errorText, styles.dateErrorText]}>
-              {t.addActivity.dateError(firstSelectableDate)}
-            </Text>
-          )}
+    <ModalShell
+      actions={
+        <>
+          <Button label={t.common.cancel} onPress={cancel} variant="text" />
+          <Button
+            label={activityToEdit ? t.common.save : t.common.add}
+            onPress={submit}
+          />
+        </>
+      }
+      // A tap outside the fields closes the keyboard, on the card or around it.
+      backgroundTestID="add-activity-backdrop"
+      color={color}
+      onBackgroundPress={Keyboard.dismiss}
+      onClose={onClose}
+      subtitle={`${activityToEdit && repeatDays.length > 0 ? t.addActivity.from : ''}${dateLabel}`}
+      title={activityToEdit ? t.addActivity.editTitle : t.addActivity.newTitle}
+    >
+      {firstSelectableDate && (
+        <DateInput
+          firstDate={firstSelectableDate}
+          initialDate={initialDate}
+          onBlur={checkDate}
+          onChange={changeDate}
+        />
+      )}
+      {firstSelectableDate && hasDateError && (
+        <Text
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+          style={[styles.errorText, styles.dateErrorText]}
+        >
+          {t.addActivity.dateError(firstSelectableDate)}
+        </Text>
+      )}
+      {/* Visible labels: the placeholders only show an example. */}
+      <Text style={[styles.label, styles.firstLabel]}>{t.addActivity.titleField}</Text>
+      <TextInput
+        accessibilityLabel={t.addActivity.titleLabel}
+        autoFocus={!activityToEdit}
+        onChangeText={setTitle}
+        onSubmitEditing={() => startInputRef.current?.focus()}
+        placeholder={t.addActivity.titlePlaceholder}
+        placeholderTextColor={colors.textSecondary}
+        returnKeyType="next"
+        style={styles.input}
+        submitBehavior="submit"
+        value={title}
+      />
+      <Text style={styles.label}>{t.addActivity.descriptionField}</Text>
+      <TextInput
+        accessibilityLabel={t.addActivity.descriptionLabel}
+        maxLength={MAX_DESCRIPTION_LENGTH}
+        multiline
+        onChangeText={setDescription}
+        placeholder={t.addActivity.descriptionPlaceholder}
+        placeholderTextColor={colors.textSecondary}
+        style={[styles.input, styles.descriptionInput]}
+        value={description}
+      />
+      <View style={styles.timeRow}>
+        <View style={styles.timeField}>
+          <Text style={[styles.label, styles.timeLabel]}>{t.addActivity.start}</Text>
           <TextInput
-            accessibilityLabel={t.addActivity.titleLabel}
-            autoFocus={!activityToEdit}
-            onChangeText={setTitle}
-            onSubmitEditing={() => startInputRef.current?.focus()}
-            placeholder={t.addActivity.titlePlaceholder}
+            accessibilityLabel={t.addActivity.startLabel}
+            keyboardType="number-pad"
+            onBlur={completeStart}
+            onChangeText={changeStart}
+            placeholder="HH:MM"
             placeholderTextColor={colors.textSecondary}
-            returnKeyType="next"
-            style={styles.input}
-            submitBehavior="submit"
-            value={title}
+            ref={startInputRef}
+            returnKeyType="done"
+            style={[styles.input, styles.timeInput]}
+            value={startText}
           />
-          <TextInput
-            accessibilityLabel={t.addActivity.descriptionLabel}
-            maxLength={MAX_DESCRIPTION_LENGTH}
-            multiline
-            onChangeText={setDescription}
-            placeholder={t.addActivity.descriptionPlaceholder}
-            placeholderTextColor={colors.textSecondary}
-            style={[styles.input, styles.descriptionInput]}
-            value={description}
-          />
-          <View style={styles.timeRow}>
-            <View style={styles.timeField}>
-              <Text style={[styles.label, styles.timeLabel]}>{t.addActivity.start}</Text>
-              <TextInput
-                accessibilityLabel={t.addActivity.startLabel}
-                keyboardType="number-pad"
-                onBlur={() => setStartText(completeTimeInput(startText))}
-                onChangeText={changeStart}
-                placeholder="HH:MM"
-                placeholderTextColor={colors.textSecondary}
-                ref={startInputRef}
-                returnKeyType="done"
-                style={[styles.input, styles.timeInput]}
-                value={startText}
-              />
-            </View>
-            <View style={styles.timeField}>
-              <Text style={[styles.label, styles.timeLabel]}>{t.addActivity.end}</Text>
-              <TextInput
-                accessibilityLabel={t.addActivity.endLabel}
-                keyboardType="number-pad"
-                onBlur={completeEnd}
-                onChangeText={changeEnd}
-                placeholder="HH:MM"
-                placeholderTextColor={colors.textSecondary}
-                returnKeyType="done"
-                style={[styles.input, styles.timeInput]}
-                value={endText}
-              />
-            </View>
-          </View>
-          {hasTimeError && (
-            <Text style={styles.errorText}>
-              {t.addActivity.timeError}
-            </Text>
-          )}
-          <Text style={styles.label}>
-            {t.addActivity.repeat}{' '}
-            {repeatDays.length === 0
-              ? t.addActivity.once
-              : repeatDays.map((day) => t.dates.weekdaysShort[day]).join(', ')}
-          </Text>
-          <RepeatPicker
-            color={color}
-            onChange={setRepeatDays}
-            value={repeatDays}
-          />
-          <Text style={styles.label}>{t.addActivity.color}</Text>
-          <ColorPicker value={color} onChange={setColor} />
-          <View style={styles.actions}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onClose}
-              style={styles.button}
-            >
-              <Text style={styles.cancelText}>{t.common.cancel}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={submit}
-              style={[styles.button, styles.confirmButton]}
-            >
-              <Text style={styles.confirmText}>
-                {activityToEdit ? t.common.save : t.common.add}
-              </Text>
-            </Pressable>
-          </View>
         </View>
-      </Pressable>
-    </Modal>
+        <View style={styles.timeField}>
+          <Text style={[styles.label, styles.timeLabel]}>{t.addActivity.end}</Text>
+          <TextInput
+            accessibilityLabel={t.addActivity.endLabel}
+            keyboardType="number-pad"
+            onBlur={completeEnd}
+            onChangeText={changeEnd}
+            placeholder="HH:MM"
+            placeholderTextColor={colors.textSecondary}
+            returnKeyType="done"
+            style={[styles.input, styles.timeInput]}
+            value={endText}
+          />
+        </View>
+      </View>
+      {hasTimeError && (
+        <Text
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+          style={styles.errorText}
+        >
+          {t.addActivity.timeError}
+        </Text>
+      )}
+      <Text style={styles.label}>
+        {t.addActivity.repeat}{' '}
+        {repeatDays.length === 0
+          ? t.addActivity.once
+          : repeatDays.map((day) => t.dates.weekdaysShort[day]).join(', ')}
+      </Text>
+      <RepeatPicker
+        color={color}
+        onChange={setRepeatDays}
+        value={repeatDays}
+      />
+      <Text style={styles.label}>{t.addActivity.color}</Text>
+      <ColorPicker value={color} onChange={setColor} />
+    </ModalShell>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    paddingTop: 72,
-    paddingHorizontal: 16,
-    backgroundColor: colors.backdrop,
-  },
-  card: {
-    padding: 20,
-    borderRadius: 24,
-    backgroundColor: colors.surface,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  date: {
-    marginTop: 4,
-    color: colors.textSecondary,
-  },
+  // At least 44 high, and taller when the phone uses a larger text.
   input: {
-    height: 44,
+    minHeight: 44,
     paddingHorizontal: 16,
     borderRadius: 22,
     backgroundColor: colors.background,
@@ -298,10 +314,8 @@ const styles = StyleSheet.create({
   },
   // Grows with the text up to about three lines, then scrolls inside.
   descriptionInput: {
-    height: undefined,
     minHeight: 44,
     maxHeight: 88,
-    marginTop: 8,
     paddingVertical: 12,
     borderRadius: 18,
     textAlignVertical: 'top',
@@ -320,8 +334,11 @@ const styles = StyleSheet.create({
   label: {
     marginTop: 12,
     marginBottom: 4,
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     color: colors.textSecondary,
+  },
+  firstLabel: {
+    marginTop: 0,
   },
   timeLabel: {
     textAlign: 'center',
@@ -329,32 +346,11 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 8,
     marginHorizontal: 16,
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     color: colors.primary,
   },
   dateErrorText: {
     marginTop: 0,
     marginBottom: 12,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 16,
-  },
-  button: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  confirmButton: {
-    backgroundColor: colors.primary,
-  },
-  cancelText: {
-    color: colors.primary,
-  },
-  confirmText: {
-    fontWeight: 'bold',
-    color: colors.surface,
   },
 });

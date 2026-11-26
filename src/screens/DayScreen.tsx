@@ -1,11 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  BackHandler,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { BackHandler, StyleSheet, View } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../components/AppText';
 import {
@@ -21,7 +17,7 @@ import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
 import DayTimeline from '../components/DayTimeline';
 import DeleteActivityModal from '../components/DeleteActivityModal';
 import ProgressRing from '../components/ProgressRing';
-import { colors } from '../theme';
+import { colors, fontSizes, SCREEN_TOP } from '../theme';
 
 const DEFAULT_FIRST_HOUR = 8;
 // Above the phone's own navigation, whether buttons or a gesture bar.
@@ -115,6 +111,7 @@ export default function DayScreen({
           <Pressable
             accessibilityLabel={t.day.previousDay}
             accessibilityRole="button"
+            hitSlop={2}
             onPress={() => changeDay(-1)}
             style={styles.arrowButton}
           >
@@ -123,6 +120,7 @@ export default function DayScreen({
           <Pressable
             accessibilityLabel={t.day.nextDay}
             accessibilityRole="button"
+            hitSlop={2}
             onPress={() => changeDay(1)}
             style={styles.arrowButton}
           >
@@ -132,7 +130,8 @@ export default function DayScreen({
       </View>
 
       <View style={styles.titleRow}>
-        <View style={styles.titles}>
+        {/* Read as one heading: the weekday and the date. */}
+        <View accessibilityRole="header" accessible style={styles.titles}>
           <Text style={styles.weekday}>
             {t.dates.weekdays[weekdayIndex(date)]}
           </Text>
@@ -167,7 +166,7 @@ export default function DayScreen({
         onPress={() => setIsAddOpen(true)}
         style={[styles.addButton, { bottom: ADD_BUTTON_BOTTOM + insets.bottom }]}
       >
-        <Ionicons name="add" size={28} color={colors.surface} />
+        <Ionicons name="add" size={28} color={colors.onColor} />
       </Pressable>
 
       {isAddOpen && (
@@ -218,7 +217,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 56,
+    paddingTop: SCREEN_TOP,
     backgroundColor: colors.background,
   },
   topBar: {
@@ -231,10 +230,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     height: 44,
-    paddingLeft: 10,
+    paddingLeft: 12,
     paddingRight: 16,
     borderRadius: 22,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.primaryContainer,
   },
   backText: {
     fontWeight: 'bold',
@@ -266,7 +265,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weekday: {
-    fontSize: 40,
+    fontSize: fontSizes.display,
     lineHeight: 44,
     includeFontPadding: false,
     fontWeight: 'bold',

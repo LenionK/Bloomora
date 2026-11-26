@@ -1,10 +1,11 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Pressable from './Pressable';
 import { Text } from './AppText';
 import { Occurrence } from '../calendar/activities';
 import { formatDayMonth, shortWeekday } from '../i18n/dates';
 import { useStrings } from '../i18n/LanguageContext';
 import { formatTime } from '../calendar/time';
-import { cardShadow, colors } from '../theme';
+import { cardShadow, colors, fontSizes, radii } from '../theme';
 import Logo from './Logo';
 
 type Props = {
@@ -25,7 +26,7 @@ export default function NextActivityCard({ occurrence, onPress, onPlan }: Props)
         onPress={onPlan}
         style={[styles.card, styles.emptyCard]}
       >
-        <Logo color={colors.surface} size={40} />
+        <Logo color={colors.onColor} size={40} />
         <View style={styles.details}>
           <Text style={styles.emptyTitle}>{t.nextActivity.emptyTitle}</Text>
           <Text style={styles.emptyText}>{t.nextActivity.emptyText}</Text>
@@ -42,7 +43,7 @@ export default function NextActivityCard({ occurrence, onPress, onPlan }: Props)
       onPress={() => onPress(start)}
       style={[styles.card, { backgroundColor: activity.color }]}
     >
-      <Logo color={colors.surface} size={40} />
+      <Logo color={colors.onColor} size={40} />
       <View style={styles.details}>
         <Text style={styles.label}>
           {t.nextActivity.next} · {shortWeekday(start, t)} {formatDayMonth(start, t)}
@@ -65,32 +66,32 @@ const styles = StyleSheet.create({
     gap: 12,
     minHeight: 96,
     padding: 16,
-    borderRadius: 24,
+    borderRadius: radii.card,
     ...cardShadow,
   },
   emptyCard: {
     backgroundColor: colors.primary,
   },
   emptyTitle: {
-    fontSize: 16,
+    fontSize: fontSizes.body,
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
   emptyText: {
-    marginTop: 2,
-    color: colors.surface,
+    marginTop: 4,
+    color: colors.onColor,
   },
   details: {
     flex: 1,
   },
   label: {
-    fontSize: 12,
-    color: colors.surface,
+    fontSize: fontSizes.caption,
+    color: colors.onColor,
   },
   title: {
-    marginVertical: 2,
-    fontSize: 18,
+    marginVertical: 4,
+    fontSize: fontSizes.subtitle,
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
 });

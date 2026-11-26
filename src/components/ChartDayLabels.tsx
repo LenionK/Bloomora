@@ -3,12 +3,12 @@ import { Text } from './AppText';
 import { Strings } from '../i18n/en';
 import { shortWeekday } from '../i18n/dates';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, fontSizes, radii } from '../theme';
 
 export const BARS_HEIGHT = 80;
 // Room above the tallest bar for its value.
 export const VALUE_HEIGHT = 16;
-export const BAR_RADIUS = 6;
+export const BAR_RADIUS = radii.small;
 // With more days the bars are too thin for values and every day's label.
 export const MAX_DAYS_WITH_VALUES = 7;
 const LABEL_EVERY_DAYS = 5;
@@ -70,9 +70,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     height: LABELS_HEIGHT,
-    marginTop: 6,
+    marginTop: 8,
   },
   dense: {
+    // Optical exception: the two label lines fit the fixed label height.
     gap: 2,
   },
   column: {
@@ -83,12 +84,12 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   weekday: {
-    fontSize: 11,
+    fontSize: fontSizes.caption,
     color: colors.textSecondary,
   },
   dayNumber: {
     width: 24,
-    fontSize: 11,
+    fontSize: fontSizes.caption,
     textAlign: 'center',
     color: colors.text,
   },

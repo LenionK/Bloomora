@@ -2,11 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import {
   BackHandler,
-  Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
+import Pressable from '../components/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from '../components/AppText';
 import {
@@ -26,6 +26,7 @@ import {
 } from '../calendar/time';
 import ChoiceChips from '../components/ChoiceChips';
 import ConfirmModal from '../components/ConfirmModal';
+import ScreenHeader from '../components/ScreenHeader';
 import { Strings } from '../i18n/en';
 import { LanguageSetting } from '../i18n/language';
 import { useLanguageSetting, useStrings } from '../i18n/LanguageContext';
@@ -43,7 +44,7 @@ import {
   saveReminderSettings,
 } from '../storage/activityDatabase';
 import { formatBytes } from '../storage/formatBytes';
-import { colors } from '../theme';
+import { colors, fontSizes, radii, SCREEN_TOP } from '../theme';
 
 const CLEANUP_PERIODS: CleanupPeriod[] = ['week', 'month', 'year'];
 const LEAD_MINUTES = [null, 0, 5, 10, 30, 60];
@@ -112,6 +113,7 @@ export default function SettingsScreen({
   const [isReset, setIsReset] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [hasHoursError, setHasHoursError] = useState(false);
 
   function loadStatus() {
     getReminderStatus().then(setStatus).catch(console.error);
@@ -236,6 +238,8 @@ export default function SettingsScreen({
         });
       }
     } else {
+      // The saved hours come back, and the message says why.
+      setHasHoursError(true);
       setStartText(toTimeText(reminders.waterStartMinutes));
       setEndText(toTimeText(reminders.waterEndMinutes));
     }
@@ -250,21 +254,9 @@ export default function SettingsScreen({
       keyboardShouldPersistTaps="handled"
       style={styles.container}
     >
-      <View style={styles.topBar}>
-        <Pressable
-          accessibilityLabel={t.common.backToCalendar}
-          accessibilityRole="button"
-          onPress={onBack}
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={18} color={colors.primary} />
-          <Text style={styles.backText}>{t.settings.calendar}</Text>
-        </Pressable>
-      </View>
+      <ScreenHeader onBack={onBack} title={t.settings.title} />
 
-      <Text style={styles.title}>{t.settings.title}</Text>
-
-      <Text style={styles.sectionTitle}>{t.settings.language}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{t.settings.language}</Text>
       <View style={[styles.card, styles.notificationsCard]}>
         <ChoiceChips
           label={t.settings.language}
@@ -278,10 +270,11 @@ export default function SettingsScreen({
       </View>
       <Text style={styles.note}>{t.settings.languageNote}</Text>
 
-      <Text style={styles.sectionTitle}>{t.settings.notifications}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{t.settings.notifications}</Text>
       <View style={[styles.card, styles.notificationsCard]}>
         {reminders === null ? (
-          <Text style={styles.rowText}>…</Text>
+          // The saved settings arrive in a few milliseconds: no loader, so nothing flickers.
+          null
         ) : (
           <>
             <Text style={styles.fieldLabel}>{t.settings.beforeActivities}</Text>
@@ -308,7 +301,10 @@ export default function SettingsScreen({
                   accessibilityLabel={t.settings.drinkFrom}
                   keyboardType="number-pad"
                   onBlur={completeWaterHours}
-                  onChangeText={(text) => setStartText(formatTimeInput(text))}
+                  onChangeText={(text) => {
+                    setHasHoursError(false);
+                    setStartText(formatTimeInput(text));
+                  }}
                   selectTextOnFocus
                   style={styles.timeInput}
                   value={startText}
@@ -318,12 +314,24 @@ export default function SettingsScreen({
                   accessibilityLabel={t.settings.drinkTo}
                   keyboardType="number-pad"
                   onBlur={completeWaterHours}
-                  onChangeText={(text) => setEndText(formatTimeInput(text))}
+                  onChangeText={(text) => {
+                    setHasHoursError(false);
+                    setEndText(formatTimeInput(text));
+                  }}
                   selectTextOnFocus
                   style={styles.timeInput}
                   value={endText}
                 />
               </View>
+            )}
+            {hasHoursError && (
+              <Text
+                accessibilityLiveRegion="polite"
+                accessibilityRole="alert"
+                style={styles.hoursError}
+              >
+                {t.settings.hoursError}
+              </Text>
             )}
           </>
         )}
@@ -335,7 +343,7 @@ export default function SettingsScreen({
         <View style={styles.row}>
           <Text style={styles.rowText}>{t.settings.plannedReminders}</Text>
           <Text style={styles.rowValue}>
-            {status === null ? '…' : status.plannedCount}
+            {status === null ? '' : status.plannedCount}
           </Text>
         </View>
         <Pressable
@@ -351,7 +359,7 @@ export default function SettingsScreen({
       </View>
       <Text style={styles.note}>{t.settings.remindersNote}</Text>
 
-      <Text style={styles.sectionTitle}>{t.settings.import}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{t.settings.import}</Text>
       <View style={styles.card}>
         <Pressable
           accessibilityLabel={t.settings.importButton}
@@ -364,16 +372,24 @@ export default function SettingsScreen({
           <Text style={styles.actionText}>{t.settings.importButton}</Text>
           <Ionicons name="download-outline" size={20} color={colors.primary} />
         </Pressable>
-        {importStatus && <Text style={styles.importStatus}>{importStatus}</Text>}
+        {importStatus && (
+          <Text
+            accessibilityLiveRegion="polite"
+            accessibilityRole="alert"
+            style={styles.importStatus}
+          >
+            {importStatus}
+          </Text>
+        )}
       </View>
       <Text style={styles.note}>{t.settings.importNote}</Text>
 
-      <Text style={styles.sectionTitle}>{t.settings.storage}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{t.settings.storage}</Text>
       <View style={styles.card}>
         <View style={styles.row}>
           <Text style={styles.rowText}>{t.settings.spaceUsed}</Text>
           <Text style={styles.rowValue}>
-            {databaseSize === null ? '…' : formatBytes(databaseSize)}
+            {databaseSize === null ? '' : formatBytes(databaseSize)}
           </Text>
         </View>
         <View style={styles.row}>
@@ -382,7 +398,7 @@ export default function SettingsScreen({
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>{t.settings.deleteOld}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{t.settings.deleteOld}</Text>
       <View style={styles.card}>
         {CLEANUP_PERIODS.map((period) => {
           const label = t.settings.olderThan[period];
@@ -414,7 +430,7 @@ export default function SettingsScreen({
       </View>
       <Text style={styles.note}>{t.settings.deleteOldNote}</Text>
 
-      <Text style={styles.sectionTitle}>{t.settings.stats}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>{t.settings.stats}</Text>
       <View style={styles.card}>
         <Pressable
           accessibilityLabel={t.settings.resetStats}
@@ -431,6 +447,7 @@ export default function SettingsScreen({
       {isResetOpen && (
         <ConfirmModal
           confirmLabel={t.settings.reset}
+          isDestructive
           message={t.settings.resetMessage}
           onClose={() => setIsResetOpen(false)}
           onConfirm={() => {
@@ -463,6 +480,7 @@ export default function SettingsScreen({
       {activitiesToDelete && (
         <ConfirmModal
           confirmLabel={t.common.delete}
+          isDestructive
           message={t.settings.cannotBeUndone}
           onClose={() => setActivitiesToDelete(null)}
           onConfirm={() => {
@@ -483,35 +501,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 56,
+    paddingTop: SCREEN_TOP,
     paddingBottom: 24,
-  },
-  topBar: {
-    flexDirection: 'row',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    height: 44,
-    paddingLeft: 10,
-    paddingRight: 16,
-    borderRadius: 22,
-    backgroundColor: colors.primarySoft,
-  },
-  backText: {
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  title: {
-    marginTop: 16,
-    fontSize: 34,
-    lineHeight: 40,
-    includeFontPadding: false,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    color: colors.text,
   },
   sectionTitle: {
     marginTop: 24,
@@ -521,7 +512,9 @@ const styles = StyleSheet.create({
   },
   card: {
     paddingHorizontal: 16,
-    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.card,
     backgroundColor: colors.surface,
   },
   notificationsCard: {
@@ -553,8 +546,8 @@ const styles = StyleSheet.create({
   },
   timeInput: {
     width: 76,
-    height: 40,
-    borderRadius: 20,
+    minHeight: 44,
+    borderRadius: 22,
     textAlign: 'center',
     backgroundColor: colors.background,
     color: colors.text,
@@ -563,7 +556,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 52,
+    minHeight: 52,
+    paddingVertical: 8,
   },
   rowText: {
     color: colors.text,
@@ -576,15 +570,20 @@ const styles = StyleSheet.create({
     fontWeight: 'normal',
     color: colors.textSecondary,
   },
+  hoursError: {
+    marginTop: 8,
+    fontSize: fontSizes.caption,
+    color: colors.danger,
+  },
   importStatus: {
     marginTop: -4,
-    marginBottom: 14,
+    marginBottom: 16,
     color: colors.textSecondary,
   },
   note: {
     marginTop: 8,
     marginHorizontal: 16,
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     color: colors.textSecondary,
   },
 });

@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Pressable from './Pressable';
 import { Text } from './AppText';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, fontSizes } from '../theme';
 
 type Props = {
   title: string;
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: 'center',
-    fontSize: 20,
+    fontSize: fontSizes.title,
     fontWeight: 'bold',
     // Capitals, slightly spaced so they stay easy to read.
     textTransform: 'uppercase',

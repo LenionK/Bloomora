@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { useStrings } from '../i18n/LanguageContext';
 import { Text } from './AppText';
 import { DayWater } from '../stats/stats';
-import { colors } from '../theme';
+import { colors, fontSizes } from '../theme';
 import { DAILY_GOAL_ML, formatLitres } from '../water/water';
 import ChartDayLabels, {
   BAR_RADIUS,
@@ -61,7 +61,7 @@ export default function WaterChart({ days }: Props) {
                           ? colors.water
                           : millilitres > 0
                             ? colors.waterMuted
-                            : colors.waterTrack,
+                            : colors.waterMuted,
                     },
                   ]}
                 />
@@ -72,8 +72,8 @@ export default function WaterChart({ days }: Props) {
       </View>
       <ChartDayLabels
         dates={days.map(({ date }) => date)}
-        todayBackground={colors.waterSoft}
-        todayColor={colors.water}
+        todayBackground={colors.waterContainer}
+        todayColor={colors.waterDark}
       />
     </View>
   );
@@ -93,8 +93,8 @@ export function UntrackedLegend({ label }: { label?: string }) {
 
 export const chartStyles = StyleSheet.create({
   caption: {
-    marginBottom: 6,
-    fontSize: 12,
+    marginBottom: 8,
+    fontSize: fontSizes.caption,
     fontWeight: 'bold',
   },
 });
@@ -111,6 +111,7 @@ const styles = StyleSheet.create({
     height: BARS_HEIGHT + VALUE_HEIGHT,
   },
   denseChart: {
+    // Optical exception to the 4-point grid: up to 30 thin bars side by side.
     gap: 2,
   },
   goalLine: {
@@ -129,9 +130,9 @@ const styles = StyleSheet.create({
   // On the card colour, so the goal line does not cross it.
   value: {
     alignSelf: 'center',
-    marginBottom: 2,
-    paddingHorizontal: 2,
-    fontSize: 10,
+    marginBottom: 4,
+    paddingHorizontal: 4,
+    fontSize: fontSizes.caption,
     fontWeight: 'bold',
     color: colors.water,
     backgroundColor: colors.surface,
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.neutral,
+    backgroundColor: colors.chartEmpty,
   },
   smallDot: {
     width: 4,
@@ -157,10 +158,10 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   legendText: {
-    fontSize: 12,
+    fontSize: fontSizes.caption,
     color: colors.textSecondary,
   },
 });

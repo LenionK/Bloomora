@@ -1,13 +1,9 @@
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Text } from './AppText';
 import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
-import Logo from './Logo';
+import Button from './Button';
+import ModalShell from './ModalShell';
 
 type Props = {
   title: string;
@@ -15,6 +11,8 @@ type Props = {
   confirmLabel: string;
   onConfirm: () => void;
   onClose: () => void;
+  // Deletes or resets data, so the confirm button is red.
+  isDestructive?: boolean;
 };
 
 export default function ConfirmModal({
@@ -23,87 +21,33 @@ export default function ConfirmModal({
   confirmLabel,
   onConfirm,
   onClose,
+  isDestructive = false,
 }: Props) {
   const t = useStrings();
 
   return (
-    <Modal onRequestClose={onClose} transparent>
-      <View style={styles.backdrop}>
-        <View style={styles.card}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <Logo color={colors.primary} size={44} />
-          </View>
-          <Text style={styles.message}>{message}</Text>
-          <View style={styles.actions}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onClose}
-              style={styles.button}
-            >
-              <Text style={styles.cancelText}>{t.common.cancel}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onConfirm}
-              style={[styles.button, styles.confirmButton]}
-            >
-              <Text style={styles.confirmText}>{confirmLabel}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    <ModalShell
+      actions={
+        <>
+          <Button label={t.common.cancel} onPress={onClose} variant="text" />
+          <Button
+            color={isDestructive ? colors.danger : colors.primary}
+            label={confirmLabel}
+            onPress={onConfirm}
+          />
+        </>
+      }
+      color={colors.primary}
+      onClose={onClose}
+      title={title}
+    >
+      <Text style={styles.message}>{message}</Text>
+    </ModalShell>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    paddingTop: 72,
-    paddingHorizontal: 16,
-    backgroundColor: colors.backdrop,
-  },
-  card: {
-    padding: 20,
-    borderRadius: 24,
-    backgroundColor: colors.surface,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  title: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
   message: {
-    marginTop: 8,
     color: colors.textSecondary,
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 16,
-  },
-  button: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  confirmButton: {
-    backgroundColor: colors.primary,
-  },
-  cancelText: {
-    color: colors.primary,
-  },
-  confirmText: {
-    fontWeight: 'bold',
-    color: colors.surface,
   },
 });

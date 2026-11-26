@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react';
 import {
   Animated,
+  Easing,
   LayoutChangeEvent,
-  Pressable,
   StyleSheet,
   View,
   ViewStyle,
 } from 'react-native';
+import Pressable from './Pressable';
 import { Text } from './AppText';
-import { colors } from '../theme';
+import { colors, durations, MIN_TOUCH_SIZE } from '../theme';
+import { useReducedMotion } from './useReducedMotion';
 
 const HEIGHT = 34;
+// Taps just above and below the track still choose an option.
+const OPTION_TAP_SPACE = {
+  top: (MIN_TOUCH_SIZE - HEIGHT) / 2,
+  bottom: (MIN_TOUCH_SIZE - HEIGHT) / 2,
+};
 
 type Option<T> = {
   value: T;
@@ -46,15 +53,21 @@ export default function SegmentedControl<T extends string | number>({
   );
   const [position] = useState(() => new Animated.Value(selectedIndex));
   const segmentWidth = width / options.length;
+  const isMotionReduced = useReducedMotion();
 
+  // The indicator slides to the chosen option, or jumps with reduced motion.
   useEffect(() => {
-    Animated.spring(position, {
+    if (isMotionReduced) {
+      position.setValue(selectedIndex);
+      return;
+    }
+    Animated.timing(position, {
       toValue: selectedIndex,
-      speed: 20,
-      bounciness: 0,
+      duration: durations.base,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [position, selectedIndex]);
+  }, [isMotionReduced, position, selectedIndex]);
 
   return (
     <View
@@ -95,6 +108,7 @@ export default function SegmentedControl<T extends string | number>({
             accessibilityLabel={`${label}: ${option.label}`}
             accessibilityRole="radio"
             accessibilityState={{ checked: isSelected }}
+            hitSlop={OPTION_TAP_SPACE}
             key={String(option.value)}
             onPress={() => onChange(option.value)}
             style={styles.option}
@@ -132,6 +146,6 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
 });

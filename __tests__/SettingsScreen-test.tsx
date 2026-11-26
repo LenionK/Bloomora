@@ -208,7 +208,7 @@ test('adds nothing when the file is cancelled', async () => {
 });
 
 test.each([
-  ['a file that is not a calendar', 'Hello', 'Not an .ics calendar file'],
+  ['a file that is not a calendar', 'Hello', 'This file is not an .ics calendar, so nothing was imported. Choose a file exported from a calendar app.'],
   [
     'a file with only past events',
     'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART:20261101T180000\r\nEND:VEVENT\r\nEND:VCALENDAR',
@@ -233,7 +233,7 @@ test('does nothing when no file is chosen', async () => {
   await fireEvent.press(screen.getByLabelText('Import from an .ics file'));
 
   expect(pickCalendarFile).toHaveBeenCalledTimes(1);
-  expect(screen.queryByText(/Not an .ics|Nothing new|could not be read/)).toBeNull();
+  expect(screen.queryByText(/not an .ics|Nothing new|could not be opened/)).toBeNull();
 });
 test('switches the whole screen to Italian and back to the phone', async () => {
   // The choice is saved, and the reminders are planned again in the new language.

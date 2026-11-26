@@ -16,8 +16,13 @@ function dotColor(day: string) {
     .backgroundColor;
 }
 
+// A day is read with its whole date, such as "Monday 2 November, today".
+function dayName(day: string) {
+  return new RegExp(`^[^ ]+ ${day} `);
+}
+
 async function openDay(day: string) {
-  await fireEvent.press(screen.getByRole('button', { name: day }));
+  await fireEvent.press(screen.getByRole('button', { name: dayName(day) }));
 }
 
 async function addActivity(title: string, start: string, repeatDay?: string) {
@@ -39,6 +44,17 @@ test('shows the current month', async () => {
   expect(screen.getByText('30')).toBeTruthy();
   expect(screen.queryByText('31')).toBeNull();
   expect(screen.getByText('No upcoming activities')).toBeTruthy();
+});
+
+test('reads each day with its whole date', async () => {
+  // The screen reader says the weekday, the month, today and whether something is planned.
+  await render(<CalendarScreen today={today} />);
+  await addActivity('Call', '1630');
+
+  expect(
+    screen.getByRole('button', { name: 'Monday 2 November, today, has activities' }),
+  ).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Tuesday 3 November' })).toBeTruthy();
 });
 
 test('dims the days already past', async () => {
@@ -78,19 +94,19 @@ test('moves between months, across the year, and back to today', async () => {
 test('opens the pressed day and keeps it selected when going back', async () => {
   // Pressing a day opens its screen, and that day is still selected on the way back.
   await render(<CalendarScreen today={today} />);
-  expect(screen.getByRole('button', { name: '2', selected: true })).toBeTruthy();
+  expect(screen.getByRole('button', { name: dayName('2'), selected: true })).toBeTruthy();
 
   await openDay('15');
   expect(screen.getByText('Sunday')).toBeTruthy();
   expect(screen.getByText('15 November')).toBeTruthy();
 
   await fireEvent.press(screen.getByLabelText('Back to calendar'));
-  expect(screen.getByRole('button', { name: '15', selected: true })).toBeTruthy();
-  expect(screen.queryByRole('button', { name: '2', selected: true })).toBeNull();
+  expect(screen.getByRole('button', { name: dayName('15'), selected: true })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: dayName('2'), selected: true })).toBeNull();
 
   await fireEvent.press(screen.getByLabelText('My day'));
   await fireEvent.press(screen.getByLabelText('Back to calendar'));
-  expect(screen.getByRole('button', { name: '2', selected: true })).toBeTruthy();
+  expect(screen.getByRole('button', { name: dayName('2'), selected: true })).toBeTruthy();
 });
 
 test('marks today in the day screen', async () => {
@@ -113,7 +129,7 @@ test('changes day across months and returns to that month', async () => {
 
   await fireEvent.press(screen.getByLabelText('Back to calendar'));
   expect(screen.getByText('December')).toBeTruthy();
-  expect(screen.getByRole('button', { name: '1', selected: true })).toBeTruthy();
+  expect(screen.getByRole('button', { name: dayName('1'), selected: true })).toBeTruthy();
 
   await openDay('1');
   await fireEvent.press(screen.getByLabelText('Previous day'));
@@ -517,14 +533,14 @@ test('shows the storage and deletes old activities from the settings', async () 
 
   await fireEvent.press(screen.getByLabelText('Settings'));
   expect(await screen.findByText('8 KB')).toBeTruthy();
-  expect(screen.getByLabelText('Older than a year')).toBeDisabled();
+  expect(screen.getByLabelText('Delete activities older than a year')).toBeDisabled();
 
-  await fireEvent.press(screen.getByLabelText('Older than a month'));
+  await fireEvent.press(screen.getByLabelText('Delete activities older than a month'));
   expect(screen.getByText('Delete 1 old activity?')).toBeTruthy();
   await fireEvent.press(screen.getByText('Cancel'));
   expect(screen.queryByText('Delete 1 old activity?')).toBeNull();
 
-  await fireEvent.press(screen.getByLabelText('Older than a month'));
+  await fireEvent.press(screen.getByLabelText('Delete activities older than a month'));
   await fireEvent.press(screen.getByText('Delete'));
   expect(await screen.findByText('0 saved')).toBeTruthy();
 });
@@ -563,7 +579,7 @@ test('marks the days with activities with a dot', async () => {
   await addActivity('Gym', '1630', 'Mon');
   await fireEvent.press(screen.getByLabelText('Back to calendar'));
 
-  expect(dotColor('2')).toBe(colors.surface);
+  expect(dotColor('2')).toBe(colors.onColor);
   expect(dotColor('9')).toBe(colors.primary);
   expect(screen.queryByTestId('activity-dot-3')).toBeNull();
 

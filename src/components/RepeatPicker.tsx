@@ -1,8 +1,9 @@
 import { memo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Pressable from './Pressable';
 import { Text } from './AppText';
 import { useStrings } from '../i18n/LanguageContext';
-import { colors } from '../theme';
+import { colors, MIN_TOUCH_SIZE } from '../theme';
 
 type Props = {
   value: number[];
@@ -50,7 +51,7 @@ export default memo(function RepeatPicker({ value, color, onChange }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    height: 44,
+    height: MIN_TOUCH_SIZE,
   },
   option: {
     flex: 1,
@@ -70,6 +71,6 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     fontWeight: 'bold',
-    color: colors.surface,
+    color: colors.onColor,
   },
 });
