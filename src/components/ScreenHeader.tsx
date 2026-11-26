@@ -80,8 +80,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: 'center',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
+    // Capitals, slightly spaced so they stay easy to read.
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
     color: colors.text,
   },
 });

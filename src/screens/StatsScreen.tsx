@@ -38,7 +38,7 @@ import {
 import { cardShadow, colors } from '../theme';
 import { DAILY_GOAL_ML, formatLitres } from '../water/water';
 
-const ACTIVITIES_RING_SIZE = 104;
+const ACTIVITIES_RING_SIZE = 96;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WATER_RING_SIZE = 84;
 
@@ -104,6 +104,9 @@ export default function StatsScreen({
   const [waterDays, setWaterDays] = useState<WaterDay[] | null>(null);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [period, setPeriod] = useState<Period>('week');
+  // The page scrolls only when the cards do not fit on the screen.
+  const [viewHeight, setViewHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
   // Undefined while loading, null when the stats were never reset.
   const [statsStart, setStatsStart] = useState<string | null>();
   const periodFirstDay = getPeriodFirstDay(period, today);
@@ -135,8 +138,14 @@ export default function StatsScreen({
     <ScrollView
       contentContainerStyle={[
         styles.content,
-        { paddingBottom: 24 + insets.bottom },
+        { paddingBottom: 12 + insets.bottom },
       ]}
+      // The cards stay still when dragged, without Android's stretch effect.
+      bounces={false}
+      onContentSizeChange={(_, height) => setContentHeight(height)}
+      onLayout={(event) => setViewHeight(event.nativeEvent.layout.height)}
+      overScrollMode="never"
+      scrollEnabled={contentHeight > viewHeight + 1}
       style={styles.container}
     >
       <ScreenHeader
@@ -422,7 +431,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    gap: 12,
+    gap: 10,
     paddingHorizontal: 16,
     paddingTop: 48,
     paddingBottom: 24,
@@ -465,7 +474,7 @@ const styles = StyleSheet.create({
   },
 
   activitiesCard: {
-    padding: 18,
+    padding: 16,
     backgroundColor: colors.primary,
   },
   activitiesTop: {
@@ -513,12 +522,12 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   breakdown: {
-    marginTop: 16,
+    marginTop: 12,
   },
 
   row: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   waterCard: {
     flex: 1,
@@ -563,7 +572,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.streak,
   },
   streakLabel: {
-    marginTop: 10,
+    marginTop: 8,
     fontSize: 13,
     color: colors.streak,
   },
@@ -600,8 +609,8 @@ const styles = StyleSheet.create({
   },
 
   chartCard: {
-    gap: 12,
-    padding: 16,
+    gap: 8,
+    padding: 14,
   },
   legendRow: {
     flexDirection: 'row',
