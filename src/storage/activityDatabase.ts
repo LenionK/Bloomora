@@ -53,6 +53,15 @@ async function openAndPrepare(): Promise<SQLiteDatabase> {
     `);
   }
 
+  if (!version || version.user_version < 2) {
+    await database.execAsync(`
+      BEGIN;
+      ALTER TABLE activities ADD COLUMN description TEXT NOT NULL DEFAULT '';
+      PRAGMA user_version = 2;
+      COMMIT;
+    `);
+  }
+
   return database;
 }
 
@@ -77,8 +86,8 @@ export async function saveActivity(activity: Activity): Promise<void> {
 
   await database.runAsync(
     `INSERT OR REPLACE INTO activities
-      (id, title, start_at, end_at, color, repeat_days, completed_dates, skipped_dates)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, title, start_at, end_at, color, repeat_days, completed_dates, skipped_dates, description)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       row.id,
       row.title,
@@ -88,6 +97,7 @@ export async function saveActivity(activity: Activity): Promise<void> {
       row.repeat_days,
       row.completed_dates,
       row.skipped_dates,
+      row.description,
     ],
   );
 }

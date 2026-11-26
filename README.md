@@ -14,7 +14,7 @@ Most calendar apps on the Play Store are full of ads or lock basic features behi
 
 - [x] Monthly calendar with the next activity always in view
 - [x] Daily timeline showing the free time between activities
-- [x] Add, edit and delete activities
+- [x] Add, edit and delete activities, with an optional description
 - [x] Activities that repeat on chosen weekdays, with single dates that can be skipped
 - [x] Daily progress on the activities marked as done
 - [x] Swipe between months and days
@@ -23,8 +23,10 @@ Most calendar apps on the Play Store are full of ads or lock basic features behi
 - [x] Daily water tracker, filling a bottle one 200 ml glass at a time towards 2 litres
 - [x] Notifications before activities and reminders to drink, set from the settings
 - [x] Stats with water streaks and scores for activities and water
+- [ ] Import events from an `.ics` file
 - [ ] Export activities to an `.ics` file for Google Calendar and other calendar apps
 - [ ] Save activities directly to the phone's calendar
+- [ ] Dark theme that follows the phone
 
 Android comes first, with iOS planned for later.
 

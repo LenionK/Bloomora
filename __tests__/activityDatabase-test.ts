@@ -37,6 +37,7 @@ const activity: Activity = {
   repeatDays: [0, 2],
   completedDates: [],
   skippedDates: [],
+  description: 'Bring the papers',
 };
 
 async function openDatabaseAtVersion(version: number) {
@@ -62,9 +63,18 @@ test('adds the skipped dates to a database created before them', async () => {
   expect(queries).toContain('PRAGMA user_version = 1');
 });
 
+test('adds the description to a database created before it', async () => {
+  // Only the missing column is added, and old activities get an empty one.
+  const queries = await openDatabaseAtVersion(1);
+
+  expect(queries).toContain("ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+  expect(queries).toContain('PRAGMA user_version = 2');
+  expect(queries).not.toContain('ADD COLUMN skipped_dates');
+});
+
 test('does not change a database that is already up to date', async () => {
   // Adding the same column twice would make the app fail at every opening.
-  const queries = await openDatabaseAtVersion(1);
+  const queries = await openDatabaseAtVersion(2);
 
   expect(queries).not.toContain('ADD COLUMN');
 });

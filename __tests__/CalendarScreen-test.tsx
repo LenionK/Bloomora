@@ -393,6 +393,23 @@ test('opens the water screen from the bar and goes back', async () => {
   expect(screen.getByText('November')).toBeTruthy();
 });
 
+test('shows the description under the title in the day', async () => {
+  // A short line on the card, so the notes are seen without opening it.
+  await render(<CalendarScreen today={today} />);
+  await openDay('2');
+
+  await fireEvent.press(screen.getByLabelText('Add activity'));
+  await fireEvent.changeText(screen.getByLabelText('Activity title'), 'Dentist');
+  await fireEvent.changeText(
+    screen.getByLabelText('Activity description'),
+    'Bring the X-rays',
+  );
+  await fireEvent.changeText(screen.getByLabelText('Start time'), '1630');
+  await fireEvent.press(screen.getByText('Add'));
+
+  expect(screen.getByText('Bring the X-rays')).toBeTruthy();
+});
+
 test('opens the stats screen from the bar and goes back', async () => {
   // The chart icon leads to the scores, which invite to start when empty.
   await render(<CalendarScreen today={today} />);

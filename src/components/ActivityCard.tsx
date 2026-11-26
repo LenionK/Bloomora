@@ -47,6 +47,11 @@ export default function ActivityCard({
         >
           {activity.title}
         </Text>
+        {!!activity.description && (
+          <Text numberOfLines={1} style={styles.description}>
+            {activity.description}
+          </Text>
+        )}
         {repeat !== '' && (
           <Text numberOfLines={1} style={styles.repeat}>
             {repeat}
@@ -96,6 +101,13 @@ const styles = StyleSheet.create({
   },
   completedTitle: {
     textDecorationLine: 'line-through',
+  },
+  // One line only, so even the smallest card keeps its title readable.
+  description: {
+    marginTop: 1,
+    fontSize: 12,
+    color: colors.surface,
+    opacity: 0.85,
   },
   repeat: {
     marginTop: 2,

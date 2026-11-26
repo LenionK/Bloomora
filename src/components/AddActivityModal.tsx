@@ -29,7 +29,11 @@ export type NewActivity = {
   end: Date;
   color: string;
   repeatDays: number[];
+  // Optional notes; empty when there are none.
+  description?: string;
 };
+
+const MAX_DESCRIPTION_LENGTH = 300;
 
 type Props = {
   date: Date;
@@ -49,6 +53,9 @@ export default function AddActivityModal({
   const [date, setDate] = useState<Date | null>(initialDate);
   const [hasDateError, setHasDateError] = useState(false);
   const [title, setTitle] = useState(activityToEdit?.title ?? '');
+  const [description, setDescription] = useState(
+    activityToEdit?.description ?? '',
+  );
   const [startText, setStartText] = useState(
     activityToEdit ? formatTime(activityToEdit.start) : '',
   );
@@ -122,6 +129,7 @@ export default function AddActivityModal({
       end: toDate(date, timeRange.end),
       color,
       repeatDays,
+      description: description.trim(),
     });
   }
 
@@ -166,6 +174,16 @@ export default function AddActivityModal({
             style={styles.input}
             submitBehavior="submit"
             value={title}
+          />
+          <TextInput
+            accessibilityLabel="Activity description"
+            maxLength={MAX_DESCRIPTION_LENGTH}
+            multiline
+            onChangeText={setDescription}
+            placeholder="Description (optional)"
+            placeholderTextColor={colors.textSecondary}
+            style={[styles.input, styles.descriptionInput]}
+            value={description}
           />
           <View style={styles.timeRow}>
             <View style={styles.timeField}>
@@ -272,6 +290,16 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: colors.background,
     color: colors.text,
+  },
+  // Grows with the text up to about three lines, then scrolls inside.
+  descriptionInput: {
+    height: undefined,
+    minHeight: 44,
+    maxHeight: 88,
+    marginTop: 8,
+    paddingVertical: 12,
+    borderRadius: 18,
+    textAlignVertical: 'top',
   },
   timeRow: {
     flexDirection: 'row',
