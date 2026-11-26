@@ -13,6 +13,7 @@ import Svg, {
   Rect,
   Text as SvgText,
 } from 'react-native-svg';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 
 // A sport bottle with straight sides and a flip lid.
@@ -104,6 +105,7 @@ export default function WaterBottle({ share, size }: Props) {
   const [wave] = useState(() => new Animated.Value(0));
   const [bubbles] = useState(() => BUBBLES.map(() => new Animated.Value(0)));
   const level = levelOf(share);
+  const t = useStrings();
   const percent = Math.round(share * 100);
   const isPercentUnderWater = level < PERCENT_MIDDLE;
 
@@ -172,7 +174,7 @@ export default function WaterBottle({ share, size }: Props) {
 
   return (
     <View
-      accessibilityLabel={`Bottle ${percent}% full`}
+      accessibilityLabel={t.water.bottle(percent)}
       accessible
       style={[styles.bottle, { width, height }]}
     >

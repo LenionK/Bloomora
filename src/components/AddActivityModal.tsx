@@ -1,12 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 import {
+  Keyboard,
   Modal,
   Pressable,
   StyleSheet,
   View,
 } from 'react-native';
 import { Text, TextInput, TextInputRef } from './AppText';
-import { MONTH_NAMES, WEEKDAY_LABELS } from '../calendar/monthGrid';
+import { formatDayMonth, shortWeekday } from '../i18n/dates';
+import { useStrings } from '../i18n/LanguageContext';
 import {
   completeTimeInput,
   formatTime,
@@ -20,8 +22,6 @@ import ColorPicker from './ColorPicker';
 import DateInput from './DateInput';
 import Logo from './Logo';
 import RepeatPicker from './RepeatPicker';
-
-const UNTITLED = 'Untitled activity';
 
 export type NewActivity = {
   title: string;
@@ -50,6 +50,7 @@ export default function AddActivityModal({
   onAdd,
   onClose,
 }: Props) {
+  const t = useStrings();
   const [date, setDate] = useState<Date | null>(initialDate);
   const [hasDateError, setHasDateError] = useState(false);
   const [title, setTitle] = useState(activityToEdit?.title ?? '');
@@ -73,11 +74,11 @@ export default function AddActivityModal({
   // The weekday helps only when the day is being chosen here.
   const weekday =
     date && firstSelectableDate
-      ? `${WEEKDAY_LABELS[(date.getDay() + 6) % 7]} `
+      ? `${shortWeekday(date, t)} `
       : '';
   const dateLabel = date
-    ? `${weekday}${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`
-    : 'Invalid date';
+    ? `${weekday}${formatDayMonth(date, t)}`
+    : t.addActivity.invalidDate;
 
   const changeDate = useCallback((newDate: Date | null) => {
     setDate(newDate);
@@ -110,7 +111,7 @@ export default function AddActivityModal({
 
   function submit() {
     // A title is optional, so a quick activity needs only its time.
-    const trimmedTitle = title.trim() || UNTITLED;
+    const trimmedTitle = title.trim() || t.activity.untitled;
 
     if (!date) {
       setHasDateError(true);
@@ -135,15 +136,21 @@ export default function AddActivityModal({
 
   return (
     <Modal onRequestClose={onClose} transparent>
-      <View style={styles.backdrop}>
+      {/* A tap outside the fields closes the keyboard, on the card or around it. */}
+      <Pressable
+        accessible={false}
+        onPress={Keyboard.dismiss}
+        style={styles.backdrop}
+        testID="add-activity-backdrop"
+      >
         <View style={styles.card}>
           <View style={styles.header}>
             <View>
               <Text style={[styles.title, { color }]}>
-                {activityToEdit ? 'Edit activity' : 'New activity'}
+                {activityToEdit ? t.addActivity.editTitle : t.addActivity.newTitle}
               </Text>
               <Text style={styles.date}>
-                {activityToEdit && repeatDays.length > 0 && 'From '}
+                {activityToEdit && repeatDays.length > 0 && t.addActivity.from}
                 {dateLabel}
               </Text>
             </View>
@@ -158,17 +165,15 @@ export default function AddActivityModal({
           )}
           {firstSelectableDate && hasDateError && (
             <Text style={[styles.errorText, styles.dateErrorText]}>
-              Enter a valid date from {firstSelectableDate.getDate()}{' '}
-              {MONTH_NAMES[firstSelectableDate.getMonth()]}{' '}
-              {firstSelectableDate.getFullYear()}
+              {t.addActivity.dateError(firstSelectableDate)}
             </Text>
           )}
           <TextInput
-            accessibilityLabel="Activity title"
+            accessibilityLabel={t.addActivity.titleLabel}
             autoFocus={!activityToEdit}
             onChangeText={setTitle}
             onSubmitEditing={() => startInputRef.current?.focus()}
-            placeholder="Activity title (optional)"
+            placeholder={t.addActivity.titlePlaceholder}
             placeholderTextColor={colors.textSecondary}
             returnKeyType="next"
             style={styles.input}
@@ -176,20 +181,20 @@ export default function AddActivityModal({
             value={title}
           />
           <TextInput
-            accessibilityLabel="Activity description"
+            accessibilityLabel={t.addActivity.descriptionLabel}
             maxLength={MAX_DESCRIPTION_LENGTH}
             multiline
             onChangeText={setDescription}
-            placeholder="Description (optional)"
+            placeholder={t.addActivity.descriptionPlaceholder}
             placeholderTextColor={colors.textSecondary}
             style={[styles.input, styles.descriptionInput]}
             value={description}
           />
           <View style={styles.timeRow}>
             <View style={styles.timeField}>
-              <Text style={[styles.label, styles.timeLabel]}>Start</Text>
+              <Text style={[styles.label, styles.timeLabel]}>{t.addActivity.start}</Text>
               <TextInput
-                accessibilityLabel="Start time"
+                accessibilityLabel={t.addActivity.startLabel}
                 keyboardType="number-pad"
                 onBlur={() => setStartText(completeTimeInput(startText))}
                 onChangeText={changeStart}
@@ -202,9 +207,9 @@ export default function AddActivityModal({
               />
             </View>
             <View style={styles.timeField}>
-              <Text style={[styles.label, styles.timeLabel]}>End</Text>
+              <Text style={[styles.label, styles.timeLabel]}>{t.addActivity.end}</Text>
               <TextInput
-                accessibilityLabel="End time"
+                accessibilityLabel={t.addActivity.endLabel}
                 keyboardType="number-pad"
                 onBlur={completeEnd}
                 onChangeText={changeEnd}
@@ -218,21 +223,21 @@ export default function AddActivityModal({
           </View>
           {hasTimeError && (
             <Text style={styles.errorText}>
-              Enter a start time and an end time later than it
+              {t.addActivity.timeError}
             </Text>
           )}
           <Text style={styles.label}>
-            Repeat:{' '}
+            {t.addActivity.repeat}{' '}
             {repeatDays.length === 0
-              ? 'Once'
-              : repeatDays.map((day) => WEEKDAY_LABELS[day]).join(', ')}
+              ? t.addActivity.once
+              : repeatDays.map((day) => t.dates.weekdaysShort[day]).join(', ')}
           </Text>
           <RepeatPicker
             color={color}
             onChange={setRepeatDays}
             value={repeatDays}
           />
-          <Text style={styles.label}>Color</Text>
+          <Text style={styles.label}>{t.addActivity.color}</Text>
           <ColorPicker value={color} onChange={setColor} />
           <View style={styles.actions}>
             <Pressable
@@ -240,7 +245,7 @@ export default function AddActivityModal({
               onPress={onClose}
               style={styles.button}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t.common.cancel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -248,12 +253,12 @@ export default function AddActivityModal({
               style={[styles.button, styles.confirmButton]}
             >
               <Text style={styles.confirmText}>
-                {activityToEdit ? 'Save' : 'Add'}
+                {activityToEdit ? t.common.save : t.common.add}
               </Text>
             </Pressable>
           </View>
         </View>
-      </View>
+      </Pressable>
     </Modal>
   );
 }

@@ -5,6 +5,7 @@ import {
   View,
 } from 'react-native';
 import { Text } from './AppText';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import Logo from './Logo';
 
@@ -23,6 +24,8 @@ export default function ConfirmModal({
   onConfirm,
   onClose,
 }: Props) {
+  const t = useStrings();
+
   return (
     <Modal onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
@@ -38,7 +41,7 @@ export default function ConfirmModal({
               onPress={onClose}
               style={styles.button}
             >
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t.common.cancel}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"

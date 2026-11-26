@@ -14,7 +14,8 @@ import {
   isCompletedOn,
   toDateKey,
 } from '../calendar/activities';
-import { MONTH_NAMES, WEEKDAY_NAMES } from '../calendar/monthGrid';
+import { formatDayMonth, weekdayIndex } from '../i18n/dates';
+import { useStrings } from '../i18n/LanguageContext';
 import { useHorizontalSwipe } from '../calendar/useHorizontalSwipe';
 import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
 import DayTimeline from '../components/DayTimeline';
@@ -53,6 +54,7 @@ export default function DayScreen({
   onDelete,
   onSkipDates,
 }: Props) {
+  const t = useStrings();
   const insets = useSafeAreaInsets();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [activityToEdit, setActivityToEdit] = useState<Activity | null>(null);
@@ -101,17 +103,17 @@ export default function DayScreen({
     <View {...daySwipeHandlers} style={styles.container}>
       <View style={styles.topBar}>
         <Pressable
-          accessibilityLabel="Back to calendar"
+          accessibilityLabel={t.common.backToCalendar}
           accessibilityRole="button"
           onPress={onBack}
           style={styles.backButton}
         >
           <Ionicons name="chevron-back" size={18} color={colors.primary} />
-          <Text style={styles.backText}>{MONTH_NAMES[date.getMonth()]}</Text>
+          <Text style={styles.backText}>{t.dates.months[date.getMonth()]}</Text>
         </Pressable>
         <View style={styles.arrows}>
           <Pressable
-            accessibilityLabel="Previous day"
+            accessibilityLabel={t.day.previousDay}
             accessibilityRole="button"
             onPress={() => changeDay(-1)}
             style={styles.arrowButton}
@@ -119,7 +121,7 @@ export default function DayScreen({
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </Pressable>
           <Pressable
-            accessibilityLabel="Next day"
+            accessibilityLabel={t.day.nextDay}
             accessibilityRole="button"
             onPress={() => changeDay(1)}
             style={styles.arrowButton}
@@ -132,11 +134,11 @@ export default function DayScreen({
       <View style={styles.titleRow}>
         <View style={styles.titles}>
           <Text style={styles.weekday}>
-            {WEEKDAY_NAMES[(date.getDay() + 6) % 7]}
+            {t.dates.weekdays[weekdayIndex(date)]}
           </Text>
           <Text style={styles.date}>
-            {date.getDate()} {MONTH_NAMES[date.getMonth()]}
-            {isToday && ' · today'}
+            {formatDayMonth(date, t)}
+            {isToday && ` · ${t.day.today}`}
           </Text>
         </View>
         {dayActivities.length > 0 && (
@@ -160,7 +162,7 @@ export default function DayScreen({
       />
 
       <Pressable
-        accessibilityLabel="Add activity"
+        accessibilityLabel={t.day.addActivity}
         accessibilityRole="button"
         onPress={() => setIsAddOpen(true)}
         style={[styles.addButton, { bottom: ADD_BUTTON_BOTTOM + insets.bottom }]}

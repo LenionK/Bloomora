@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import Svg, { Circle } from 'react-native-svg';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 
 const SIZE = 60;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export default function ProgressRing({ completed, total }: Props) {
+  const t = useStrings();
   const arc = {
     cx: CENTER,
     cy: CENTER,
@@ -25,7 +27,7 @@ export default function ProgressRing({ completed, total }: Props) {
 
   return (
     <View
-      accessibilityLabel={`${completed} of ${total} completed`}
+      accessibilityLabel={t.day.completedOf(completed, total)}
       accessible
       style={styles.ring}
     >

@@ -1,6 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
-import { WEEKDAY_LABELS } from '../calendar/monthGrid';
+import { Strings } from '../i18n/en';
+import { shortWeekday } from '../i18n/dates';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 
 export const BARS_HEIGHT = 80;
@@ -19,8 +21,8 @@ type Props = {
   todayBackground: string;
 };
 
-export function weekdayOf(date: Date): string {
-  return WEEKDAY_LABELS[(date.getDay() + 6) % 7];
+export function weekdayOf(date: Date, t: Strings): string {
+  return shortWeekday(date, t);
 }
 
 // The labels under the bars of a chart of days, with today on a coloured tile.
@@ -29,6 +31,7 @@ export default function ChartDayLabels({
   todayColor,
   todayBackground,
 }: Props) {
+  const t = useStrings();
   const isShort = dates.length <= MAX_DAYS_WITH_VALUES;
 
   return (
@@ -48,7 +51,7 @@ export default function ChartDayLabels({
             ]}
           >
             {isShort && (
-              <Text style={[styles.weekday, todayText]}>{weekdayOf(date)}</Text>
+              <Text style={[styles.weekday, todayText]}>{weekdayOf(date, t)}</Text>
             )}
             {isLabelled && (
               <Text numberOfLines={1} style={[styles.dayNumber, todayText]}>

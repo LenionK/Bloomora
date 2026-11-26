@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
-import { WEEKDAY_LABELS } from '../calendar/monthGrid';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 
 type Props = {
@@ -11,6 +11,8 @@ type Props = {
 };
 
 export default memo(function RepeatPicker({ value, color, onChange }: Props) {
+  const t = useStrings();
+
   function toggleDay(day: number) {
     const days = value.includes(day)
       ? value.filter((selectedDay) => selectedDay !== day)
@@ -21,7 +23,7 @@ export default memo(function RepeatPicker({ value, color, onChange }: Props) {
 
   return (
     <View style={styles.row}>
-      {WEEKDAY_LABELS.map((label, day) => {
+      {t.dates.weekdaysShort.map((label, day) => {
         const isSelected = value.includes(day);
 
         return (
@@ -29,7 +31,7 @@ export default memo(function RepeatPicker({ value, color, onChange }: Props) {
             accessibilityLabel={label}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: isSelected }}
-            key={label}
+            key={day}
             onPress={() => toggleDay(day)}
             style={styles.option}
           >

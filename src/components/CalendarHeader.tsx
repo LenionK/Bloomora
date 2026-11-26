@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
-import { MONTH_NAMES } from '../calendar/monthGrid';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 import Logo from './Logo';
 
@@ -18,6 +18,8 @@ export default function CalendarHeader({
   onPreviousMonth,
   onNextMonth,
 }: Props) {
+  const t = useStrings();
+
   return (
     <>
       <View style={styles.topBar}>
@@ -29,10 +31,10 @@ export default function CalendarHeader({
 
       <Text style={styles.year}>{year}</Text>
       <View style={styles.monthRow}>
-        <Text style={styles.month}>{MONTH_NAMES[month]}</Text>
+        <Text style={styles.month}>{t.dates.months[month]}</Text>
         <View style={styles.arrows}>
           <Pressable
-            accessibilityLabel="Previous month"
+            accessibilityLabel={t.calendar.previousMonth}
             accessibilityRole="button"
             onPress={onPreviousMonth}
             style={styles.arrowButton}
@@ -40,7 +42,7 @@ export default function CalendarHeader({
             <Ionicons name="chevron-back" size={24} color={colors.surface} />
           </Pressable>
           <Pressable
-            accessibilityLabel="Next month"
+            accessibilityLabel={t.calendar.nextMonth}
             accessibilityRole="button"
             onPress={onNextMonth}
             style={styles.arrowButton}

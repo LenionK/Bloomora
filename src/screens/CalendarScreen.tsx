@@ -7,17 +7,20 @@ import {
   skipDates,
   toggleCompletedOn,
 } from '../calendar/activities';
+import { ImportedActivity } from '../calendar/ics';
 import { useHorizontalSwipe } from '../calendar/useHorizontalSwipe';
 import AddActivityModal, { NewActivity } from '../components/AddActivityModal';
 import CalendarGrid from '../components/CalendarGrid';
 import CalendarHeader from '../components/CalendarHeader';
 import NextActivityCard from '../components/NextActivityCard';
 import ShortcutBar from '../components/ShortcutBar';
+import { useStrings } from '../i18n/LanguageContext';
 import { refreshReminders } from '../notifications/scheduler';
 import {
   deleteActivities,
   deleteActivity,
   loadActivities,
+  saveActivities,
   saveActivity,
 } from '../storage/activityDatabase';
 import { getActivityStats } from '../stats/stats';
@@ -32,6 +35,7 @@ type Props = {
 };
 
 export default function CalendarScreen({ today = new Date() }: Props) {
+  const t = useStrings();
   const insets = useSafeAreaInsets();
   const [visibleMonth, setVisibleMonth] = useState(
     new Date(today.getFullYear(), today.getMonth(), 1),
@@ -103,6 +107,18 @@ export default function CalendarScreen({ today = new Date() }: Props) {
     saveActivity(newActivity).catch(console.error);
   }
 
+  function importActivities(imported: ImportedActivity[]) {
+    const now = Date.now();
+    const newActivities = imported.map((activity, index) => ({
+      ...activity,
+      id: `${now}-${index}`,
+      completedDates: [],
+    }));
+
+    setActivities((current) => [...current, ...newActivities]);
+    saveActivities(newActivities).catch(console.error);
+  }
+
   function editActivity(activity: Activity, changes: NewActivity) {
     const updated = { ...activity, ...changes };
 
@@ -145,6 +161,7 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         onDeleteOld={(oldActivities) => {
           deleteOldActivities(oldActivities).catch(console.error);
         }}
+        onImport={importActivities}
         onRemindersChange={() => refreshReminders(activities)}
         today={today}
       />
@@ -234,28 +251,28 @@ export default function CalendarScreen({ today = new Date() }: Props) {
         <ShortcutBar
           shortcuts={[
             {
-              label: 'My day',
+              label: t.shortcuts.myDay,
               icon: 'today-outline',
               onPress: () => openDay(today),
             },
             {
-              label: 'Water',
+              label: t.shortcuts.water,
               icon: 'water-outline',
               onPress: () => setIsWaterOpen(true),
             },
             {
-              label: 'Add activity',
+              label: t.day.addActivity,
               icon: 'add',
               isMain: true,
               onPress: () => setIsQuickAddOpen(true),
             },
             {
-              label: 'Stats',
+              label: t.shortcuts.stats,
               icon: 'stats-chart-outline',
               onPress: () => setIsStatsOpen(true),
             },
             {
-              label: 'Settings',
+              label: t.shortcuts.settings,
               icon: 'settings-outline',
               onPress: () => setIsSettingsOpen(true),
             },

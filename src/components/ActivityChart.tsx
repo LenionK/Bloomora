@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { useStrings } from '../i18n/LanguageContext';
 import { Text } from './AppText';
 import { DayActivities } from '../stats/stats';
 import { colors } from '../theme';
@@ -22,17 +23,20 @@ type Props = {
 // the bottom. A dot marks days with nothing planned. It has the same height as
 // the water chart, so switching between them moves nothing.
 export default function ActivityChart({ days }: Props) {
+  const t = useStrings();
   const isShort = days.length <= MAX_DAYS_WITH_VALUES;
   const scale = Math.max(MIN_SCALE, ...days.map(({ planned }) => planned));
 
   return (
     <View>
-      <Text style={styles.caption}>Done out of planned</Text>
+      <Text style={styles.caption}>{t.charts.doneOutOfPlanned}</Text>
       <View style={[styles.chart, !isShort && styles.denseChart]}>
         {days.map(({ date, done, planned }) => (
           <View
-            accessibilityLabel={`${weekdayOf(date)} ${date.getDate()}: ${
-              planned === 0 ? 'nothing planned' : `${done} of ${planned} done`
+            accessibilityLabel={`${weekdayOf(date, t)} ${date.getDate()}: ${
+              planned === 0
+                ? t.charts.nothingPlannedDay
+                : t.charts.doneOfPlanned(done, planned)
             }`}
             accessible
             key={date.getTime()}

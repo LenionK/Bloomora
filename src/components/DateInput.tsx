@@ -11,6 +11,7 @@ import {
   parseDateInputs,
   toDateInputs,
 } from '../calendar/dateInput';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 
 type Props = {
@@ -24,6 +25,7 @@ export default memo(function DateInput({
   firstDate,
   onChange,
 }: Props) {
+  const t = useStrings();
   const [inputs, setInputs] = useState(toDateInputs(initialDate));
 
   function changeInputs(changes: Partial<DateInputs>) {
@@ -37,9 +39,9 @@ export default memo(function DateInput({
   return (
     <View style={styles.row}>
       <View style={styles.field}>
-        <Text style={styles.label}>Day</Text>
+        <Text style={styles.label}>{t.dateInput.day}</Text>
         <TextInput
-          accessibilityLabel="Day"
+          accessibilityLabel={t.dateInput.day}
           keyboardType="number-pad"
           onBlur={() =>
             setInputs({ ...inputs, day: completeTwoDigitInput(inputs.day) })
@@ -52,9 +54,9 @@ export default memo(function DateInput({
         />
       </View>
       <View style={styles.field}>
-        <Text style={styles.label}>Month</Text>
+        <Text style={styles.label}>{t.dateInput.month}</Text>
         <TextInput
-          accessibilityLabel="Month"
+          accessibilityLabel={t.dateInput.month}
           keyboardType="number-pad"
           onBlur={() =>
             setInputs({ ...inputs, month: completeTwoDigitInput(inputs.month) })
@@ -69,9 +71,9 @@ export default memo(function DateInput({
         />
       </View>
       <View style={styles.yearField}>
-        <Text style={styles.label}>Year</Text>
+        <Text style={styles.label}>{t.dateInput.year}</Text>
         <TextInput
-          accessibilityLabel="Year"
+          accessibilityLabel={t.dateInput.year}
           keyboardType="number-pad"
           onChangeText={(text) => changeInputs({ year: formatYearInput(text) })}
           returnKeyType="done"

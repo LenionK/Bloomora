@@ -2,7 +2,8 @@ import { memo, useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './AppText';
 import { Activity, getDaysWithActivities } from '../calendar/activities';
-import { buildMonthGrid, WEEKDAY_LABELS } from '../calendar/monthGrid';
+import { buildMonthGrid } from '../calendar/monthGrid';
+import { useStrings } from '../i18n/LanguageContext';
 import { colors } from '../theme';
 
 const CELL_HEIGHT = 48;
@@ -37,9 +38,11 @@ const DayCell = memo(function DayCell({
   hasActivities,
   onSelectDay,
 }: DayCellProps) {
+  const t = useStrings();
+
   return (
     <Pressable
-      accessibilityHint={hasActivities ? 'Has activities' : undefined}
+      accessibilityHint={hasActivities ? t.calendar.hasActivities : undefined}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
       onPress={() => onSelectDay(day)}
@@ -79,6 +82,7 @@ export default function CalendarGrid({
   activities,
   onSelectDate,
 }: Props) {
+  const t = useStrings();
   const onSelectDay = useCallback(
     (day: number) => onSelectDate(new Date(year, month, day)),
     [year, month, onSelectDate],
@@ -99,9 +103,9 @@ export default function CalendarGrid({
 
   return (
     <View style={styles.grid}>
-      {WEEKDAY_LABELS.map((label, index) => (
+      {t.dates.weekdaysShort.map((label, index) => (
         <View key={index} style={styles.cell}>
-          <Text style={[styles.weekday, label === 'Sun' && styles.sunday]}>
+          <Text style={[styles.weekday, index === 6 && styles.sunday]}>
             {label}
           </Text>
         </View>
