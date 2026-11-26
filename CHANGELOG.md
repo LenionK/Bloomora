@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.0](https://github.com/LenionK/Bloomora/compare/v0.5.0...v0.6.0) (2026-11-26)
+
+
+### Features
+
+* reset stats, optional titles and a release build plugin ([#26](https://github.com/LenionK/Bloomora/issues/26)) ([ed548a1](https://github.com/LenionK/Bloomora/commit/ed548a11a4e1cb10ebd0f3dd90a1a9ba1a0a8425))
+* **US-15:** add an optional description to activities ([#29](https://github.com/LenionK/Bloomora/issues/29)) ([f59f9d9](https://github.com/LenionK/Bloomora/commit/f59f9d9dafd30bc83ba3ec8661f8049105a4cbfa))
+
+
+### Bug Fixes
+
+* apply the UX audit rules to forms, colours, motion and copy ([#32](https://github.com/LenionK/Bloomora/issues/32)) ([3fcc25c](https://github.com/LenionK/Bloomora/commit/3fcc25ce8f016b9829788835c823a54d9b934ce8))
+* close the keyboard when tapping outside the fields ([#31](https://github.com/LenionK/Bloomora/issues/31)) ([d71882e](https://github.com/LenionK/Bloomora/commit/d71882efee6babf84a0bd187eec6ca8a57555491))
+* keep the stats screen still and write page titles in capitals ([#30](https://github.com/LenionK/Bloomora/issues/30)) ([fdfbbda](https://github.com/LenionK/Bloomora/commit/fdfbbdaa9357f310273c2f3c0dae40d167f6be36))
+* ship the Nunito font and keep clear of Android's navigation bar ([#28](https://github.com/LenionK/Bloomora/issues/28)) ([cea870d](https://github.com/LenionK/Bloomora/commit/cea870db3c165adadd94eb8cdf67d3457c305f62))
+
 ## [0.5.0](https://github.com/LenionK/Bloomora/compare/v0.4.0...v0.5.0) (2026-11-13)
 
 
